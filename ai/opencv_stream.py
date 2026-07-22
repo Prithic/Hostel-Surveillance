@@ -63,6 +63,14 @@ class OpenCVVideoStream(VideoStream):
             self._thread = threading.Thread(target=self._capture_loop, daemon=True)
             self._thread.start()
 
+            # ponytail: wait up to 2 seconds for initial frame acquisition so caller read() never returns None on startup
+            start_wait = time.perf_counter()
+            while time.perf_counter() - start_wait < 2.0:
+                with self._lock:
+                    if self._latest_frame is not None:
+                        break
+                time.sleep(0.01)
+
     def _capture_loop(self) -> None:
         while self._running and self._cap is not None and self._cap.isOpened():
             ret, frame = self._cap.read()
