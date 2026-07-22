@@ -24,8 +24,14 @@ class OpenCVVideoStream(VideoStream):
         if self._cap is not None and self._cap.isOpened():
             return
         # ponytail: CAP_DSHOW avoids flaky default MSMF opens on Windows webcams
-        if isinstance(self._source, int) and sys.platform == "win32":
-            cap = cv2.VideoCapture(self._source, cv2.CAP_DSHOW)
+        src_int = None
+        if isinstance(self._source, int):
+            src_int = self._source
+        elif isinstance(self._source, str) and self._source.isdigit():
+            src_int = int(self._source)
+
+        if src_int is not None and sys.platform == "win32":
+            cap = cv2.VideoCapture(src_int, cv2.CAP_DSHOW)
         else:
             cap = cv2.VideoCapture(self._source)
         if not cap.isOpened():
