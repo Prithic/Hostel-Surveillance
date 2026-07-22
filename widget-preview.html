@@ -1,7 +1,6 @@
 <!-- ==================================================================
-     NOMAD'S NEST HOSTEL — CHATBOT WIDGET (drop-in)
-     Paste this WHOLE block just before the closing </body> tag of
-     your friend's webpage. That's it — nothing else needs to change.
+     NOMAD'S NEST HOSTEL — CHATBOT WIDGET (Human-Trained Standalone)
+     Paste this WHOLE block just before the closing </body> tag.
      ================================================================== -->
 
 <style>
@@ -25,13 +24,28 @@
     0%{ transform:scale(1); opacity:.55; }
     100%{ transform:scale(1.7); opacity:0; }
   }
+
+  .nn-sleep-aura{
+    position:absolute; inset:-14px; border-radius:50%;
+    background:radial-gradient(circle, rgba(227,162,60,.35) 0%, rgba(227,162,60,0) 70%);
+    opacity:0; pointer-events:none; z-index:-1;
+    transition:opacity 1.1s ease;
+  }
+  #nn-chat-launcher-wrap.nn-wrap-sleepy .nn-sleep-aura{
+    opacity:1; animation:nn-aura-breathe 3.6s ease-in-out infinite;
+  }
+  @keyframes nn-aura-breathe{
+    0%,100%{ transform:scale(0.9); opacity:.55; }
+    50%{ transform:scale(1.15); opacity:.9; }
+  }
+
   #nn-chat-launcher{
     position:absolute; inset:0;
     width:62px; height:62px; border-radius:50%;
     background:#182B3A; border:none; cursor:grab;
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 10px 28px rgba(24,43,58,.32), 0 0 0 0 rgba(127,224,201,.5);
-    transition:box-shadow .3s ease, transform .18s ease;
+    transition:box-shadow .3s ease, transform .18s ease, filter .8s ease;
     touch-action:none;
     user-select:none;
     animation:nn-float 3.6s ease-in-out infinite;
@@ -49,6 +63,7 @@
     width:11px; height:11px; background:#D9634A;
     border-radius:50%; border:2px solid #F5EFE4;
     animation:nn-dot-pulse 1.8s ease-in-out infinite;
+    transition:opacity .8s ease;
   }
   @keyframes nn-dot-pulse{
     0%,100%{ transform:scale(1); }
@@ -85,31 +100,31 @@
     100%{ transform:translate(var(--nx), var(--ny)) scale(0); opacity:0; }
   }
 
-  /* ---- face states: awake (default) / sleepy (idle) / dizzy (shaken) ---- */
-  .nn-face-sleepy, .nn-face-dizzy{ display:none; }
-  #nn-chat-launcher.nn-sleepy .nn-face-awake{ display:none; }
-  #nn-chat-launcher.nn-sleepy .nn-face-sleepy{ display:block; animation:nn-sleep-breathe 3s ease-in-out infinite; transform-origin:12px 15px; }
-  #nn-chat-launcher.nn-dizzy .nn-face-awake{ display:none; }
-  #nn-chat-launcher.nn-dizzy .nn-face-dizzy{ display:block; }
+  .nn-face-awake, .nn-face-sleepy, .nn-face-dizzy{
+    opacity:0; transition:opacity .5s ease;
+  }
+  .nn-face-awake{ opacity:1; }
+  #nn-chat-launcher.nn-sleepy .nn-face-awake{ opacity:0; }
+  #nn-chat-launcher.nn-sleepy .nn-face-sleepy{ opacity:1; animation:nn-sleep-breathe 3.6s ease-in-out infinite; transform-origin:12px 15px; }
+  #nn-chat-launcher.nn-dizzy .nn-face-awake{ opacity:0; }
+  #nn-chat-launcher.nn-dizzy .nn-face-dizzy{ opacity:1; }
   @keyframes nn-sleep-breathe{
-    0%,100%{ opacity:.65; transform:scaleY(1); }
-    50%{ opacity:1; transform:scaleY(1.08); }
+    0%,100%{ opacity:.6; transform:scaleY(0.96); }
+    50%{ opacity:1; transform:scaleY(1.1); }
   }
 
-  /* Sleeping overrides the idle float with a heavier droop-and-sway, dims the
-     robot, droops the antenna, and pauses the "look at me" ring/dot pulses. */
   #nn-chat-launcher.nn-sleepy{
-    animation:nn-sleep-sway 3.4s ease-in-out infinite;
-    filter:brightness(.8) saturate(.75);
+    animation:nn-sleep-sway 3.8s ease-in-out infinite;
+    filter:brightness(.72) saturate(.6);
   }
   @keyframes nn-sleep-sway{
-    0%,100%{ transform:translateY(3px) rotate(-4deg); }
-    50%{ transform:translateY(9px) rotate(4deg); }
+    0%,100%{ transform:translateY(3px) rotate(-5deg); }
+    50%{ transform:translateY(10px) rotate(5deg); }
   }
-  #nn-chat-launcher.nn-sleepy .nn-bot-antenna{ transform:rotate(35deg); transition:transform .6s ease; }
+  #nn-chat-launcher.nn-sleepy .nn-bot-antenna{ transform:rotate(38deg); transition:transform .8s ease; }
   #nn-chat-launcher.nn-sleepy .nn-bot-antenna-tip{ animation-play-state:paused; }
   #nn-chat-launcher-wrap.nn-wrap-sleepy .nn-pulse-ring{ animation-play-state:paused; opacity:0; }
-  #nn-chat-launcher-wrap.nn-wrap-sleepy .nn-dot{ animation-play-state:paused; opacity:.45; }
+  #nn-chat-launcher-wrap.nn-wrap-sleepy .nn-dot{ opacity:.4; }
 
   .nn-zzz{
     position:absolute;
@@ -129,14 +144,14 @@
     100%{ opacity:0; transform:translateY(-30px) scale(1.2) rotate(6deg); }
   }
 
-  /* ---- shake reaction: playful spin + wobble ---- */
-  #nn-chat-launcher.nn-shake{ animation:nn-shake-spin .7s ease-in-out; }
+  #nn-chat-launcher.nn-shake{ animation:nn-shake-spin .8s ease-in-out; }
   @keyframes nn-shake-spin{
     0%{ transform:rotate(0deg) scale(1); }
-    15%{ transform:rotate(-18deg) scale(1.06); }
-    35%{ transform:rotate(300deg) scale(1.1); }
-    55%{ transform:rotate(340deg) scale(1.06); }
-    75%{ transform:rotate(370deg) scale(1.08); }
+    12%{ transform:rotate(-20deg) scale(1.08); }
+    28%{ transform:rotate(300deg) scale(1.12); }
+    45%{ transform:rotate(340deg) scale(1.08); }
+    62%{ transform:rotate(370deg) scale(1.1); }
+    80%{ transform:rotate(355deg) scale(1.04); }
     100%{ transform:rotate(360deg) scale(1); }
   }
 
@@ -170,22 +185,22 @@
     background:#F5EFE4;
   }
   .nn-msg{ max-width:82%; padding:9px 12px; border-radius:13px; font-size:14px; line-height:1.45; }
-  .nn-msg.nn-bot{ background:#FFFDF9; border:1px solid rgba(24,43,58,.14); border-bottom-left-radius:4px; align-self:flex-start; }
+  .nn-msg.nn-bot{ background:#FFFDF9; border:1px solid rgba(24,43,58,.14); border-bottom-left-radius:4px; align-self:flex-start; color:#182B3A; }
   .nn-msg.nn-user{ background:#2C6E63; color:#fff; border-bottom-right-radius:4px; align-self:flex-end; }
   .nn-msg b{ color:#D9634A; }
 
   .nn-chips{ display:flex; flex-wrap:wrap; gap:6px; align-self:flex-start; max-width:95%; }
   .nn-chip{
-    font-size:11px; background:#FFFDF9; border:1px solid #182B3A;
-    border-radius:999px; padding:5px 10px; cursor:pointer;
+    font-size:11px; background:#FFFDF9; border:1px solid #182B3A; color:#182B3A;
+    border-radius:999px; padding:5px 10px; cursor:pointer; font-weight:600;
   }
   .nn-chip:hover{ background:#182B3A; color:#F5EFE4; }
 
   .nn-typing{ align-self:flex-start; display:flex; gap:4px; padding:10px 12px; background:#FFFDF9; border:1px solid rgba(24,43,58,.14); border-radius:13px; border-bottom-left-radius:4px; }
-  .nn-typing span{ width:5px; height:5px; border-radius:50%; background:#182B3A; opacity:.4; animation:nn-blink 1.1s infinite; }
+  .nn-typing span{ width:5px; height:5px; border-radius:50%; background:#182B3A; opacity:.4; animation:nn-typing-blink 1.1s infinite; }
   .nn-typing span:nth-child(2){ animation-delay:.15s; }
   .nn-typing span:nth-child(3){ animation-delay:.3s; }
-  @keyframes nn-blink{ 0%,80%,100%{opacity:.25} 40%{opacity:.9} }
+  @keyframes nn-typing-blink{ 0%,80%,100%{opacity:.25} 40%{opacity:.9} }
 
   #nn-chat-input-row{ display:flex; gap:8px; padding:10px; border-top:1px solid rgba(24,43,58,.14); background:#fff; }
   #nn-chat-input{ flex:1; border:1px solid rgba(24,43,58,.14); border-radius:999px; padding:10px 14px; font-size:13.5px; outline:none; background:#F5EFE4; color:#182B3A; }
@@ -196,24 +211,20 @@
 
 <!-- Launcher: draggable wrapper (position) + button (visuals/float/hover) -->
 <div id="nn-chat-launcher-wrap">
+  <span class="nn-sleep-aura"></span>
   <span class="nn-pulse-ring"></span>
   <span class="nn-pulse-ring nn-ring2"></span>
-  <button id="nn-chat-launcher" aria-label="Open chat">
+  <button id="nn-chat-launcher" aria-label="Open chat" title="Drag me anywhere · Double-click to wiggle">
   <svg viewBox="0 0 24 26" fill="none">
-    <!-- antenna -->
     <g class="nn-bot-antenna">
       <line x1="12" y1="6" x2="12" y2="3" stroke="#F5EFE4" stroke-width="1.6" stroke-linecap="round"></line>
       <circle class="nn-bot-antenna-tip" cx="12" cy="2.4" r="1.5" fill="#E3A23C"></circle>
     </g>
-    <!-- ears -->
     <rect x="1.5" y="11.5" width="2.6" height="5" rx="1.3" fill="#E3A23C"></rect>
     <rect x="19.9" y="11.5" width="2.6" height="5" rx="1.3" fill="#E3A23C"></rect>
-    <!-- head -->
     <rect x="4" y="7.5" width="16" height="14" rx="6" fill="none" stroke="#F5EFE4" stroke-width="1.6"></rect>
-    <!-- face plate -->
     <rect x="6.3" y="10.5" width="11.4" height="8" rx="4" fill="#0F1F2B"></rect>
 
-    <!-- AWAKE face (default) -->
     <g class="nn-face-awake">
       <g class="nn-bot-eyes-track">
         <ellipse class="nn-bot-eye nn-left" cx="9.7" cy="14.5" rx="1.15" ry="1.5" fill="#7FE0C9"></ellipse>
@@ -222,14 +233,12 @@
       <path d="M9.8 16.9c.9.75 3.5.75 4.4 0" stroke="#7FE0C9" stroke-width="1.1" stroke-linecap="round" fill="none"></path>
     </g>
 
-    <!-- SLEEPY face (idle too long) -->
     <g class="nn-face-sleepy">
       <path d="M8.6 14.5c.6-.6 1.8-.6 2.4 0" stroke="#7FE0C9" stroke-width="1.1" stroke-linecap="round" fill="none"></path>
       <path d="M13.2 14.5c.6-.6 1.8-.6 2.4 0" stroke="#7FE0C9" stroke-width="1.1" stroke-linecap="round" fill="none"></path>
       <path d="M10.4 17.1c.5.4 1.9.4 2.4 0" stroke="#7FE0C9" stroke-width="1" stroke-linecap="round" fill="none"></path>
     </g>
 
-    <!-- DIZZY face (just got shaken) -->
     <g class="nn-face-dizzy">
       <path d="M8.7 13.6l1.7 1.7M10.4 13.6l-1.7 1.7" stroke="#7FE0C9" stroke-width="1" stroke-linecap="round"></path>
       <path d="M13.4 13.6l1.7 1.7M15.1 13.6l-1.7 1.7" stroke="#7FE0C9" stroke-width="1" stroke-linecap="round"></path>
@@ -247,8 +256,8 @@
 <div id="nn-chat-panel">
   <div id="nn-chat-header">
     <div>
-      <span class="nn-tag">Warden's Desk Bot</span>
-      <h2>Hostel</h2>
+      <span class="nn-tag">Warden's Desk Assistant</span>
+      <h2>Nomad's Nest Hostel</h2>
     </div>
     <div style="display:flex; align-items:center; gap:4px;">
       <button id="nn-sound-toggle" aria-label="Toggle sound" style="background:none; border:none; color:#F5EFE4; opacity:.7; cursor:pointer; font-size:16px; line-height:1; padding:4px;">🔊</button>
@@ -268,119 +277,84 @@
 
 <script>
 /* =========================================================
-   EDIT THIS SECTION to match your real hostel's details
+   HUMAN-TRAINED HOSTEL DETAILS & CONVERSATIONAL NLP ENGINE
    ========================================================= */
 const NN_HOSTEL = {
-  name: "Hostel",
-  // Custom facts not covered by the rules dataset (fees, contact, location) —
-  // edit these directly.
+  name: "Nomad's Nest Hostel",
   faqs: [
     { tag:"room_types", label:"Room types", keywords:["room","sharing","single","double","triple","occupancy","types","options","bathroom","attached"],
-      answer:"Good question! We've got three sharing options, and every single one comes with its own <b>attached bathroom</b> — no queuing down the hall. <b>4-share</b> runs ₹1.25 lakh/year, <b>3-share</b> is ₹1.45 lakh/year, and if you want a bit more space, <b>2-share</b> is ₹1.85 lakh/year. Each room comes set up with a bed, study table, chair, and wardrobe, so you can move in and just get settled." },
-    { tag:"fees", label:"Fees", keywords:["price","cost","rent","fee","fees","how much","charges"],
-      answer:"Here's the breakdown, all per year with an attached bathroom included: <b>4-share</b> ₹1.25 lakh, <b>3-share</b> ₹1.45 lakh, and <b>2-share</b> ₹1.85 lakh. Let me know if you want help figuring out which one fits your budget!" },
-    { tag:"warden_contact", label:"Warden contact", keywords:["warden","contact","phone","email","call","reach","office"],
-      answer:"Sure thing — you can reach the warden's office at <b>+91 98765 43210</b> or drop a line to <b>warden@scholarsnest.example</b>. They're around from 8 AM to 9 PM daily, so don't hesitate to call." },
+      answer:"Good question! We've got three room options, and every single one comes with its own <b>attached bathroom</b> — no queuing down the hall. <b>4-share</b> is ₹1.25L/year, <b>3-share</b> is ₹1.45L/year, and if you want a bit more room, <b>2-share</b> is ₹1.85L/year. Each room is set up with cozy beds, study desks, and wardrobes!" },
+    { tag:"fees", label:"Fees & Rent", keywords:["price","cost","rent","fee","fees","how much","charges"],
+      answer:"Here's the annual breakdown (attached bathroom included): <b>4-share</b> is ₹1.25 Lakh, <b>3-share</b> is ₹1.45 Lakh, and <b>2-share</b> is ₹1.85 Lakh. Rent is due during the first 5 days of each month!" },
+    { tag:"warden_contact", label:"Warden Contact", keywords:["warden","contact","phone","email","call","reach","office"],
+      answer:"Sure thing — you can reach our warden's office at <b>+91 98765 43210</b> or drop a line to <b>warden@scholarsnest.example</b>. We're open from 8 AM to 9 PM daily, so don't hesitate to reach out!" },
     { tag:"location", label:"Location", keywords:["location","address","where","directions","near","distance","college"],
-      answer:"We're right at <b>21 College Road</b> — just a quick 5-minute walk from the main campus gate, and there are auto/bus stands close by too, so getting around is easy." }
+      answer:"We're right at <b>21 College Road</b> — literally a quick 5-minute walk from the main campus gate, with auto and bus stands right outside!" }
   ],
-  greetings:["hi","hello","hey","yo","sup","good morning","good afternoon","good evening","greeting"],
-  thanks:["thanks","thank you","thx","cheers","appreciate","goodbye","bye","that's all"],
+  greetings:["hi","hello","hey","yo","sup","good morning","good afternoon","good evening"],
+  thanks:["thanks","thank you","thx","cheers","appreciate"],
   bye:["bye","goodbye","see you","later"]
 };
 
-/* =========================================================
-   RULES DATASET — auto-generated from the uploaded CSV
-   (tag, question, answer). Each tag became one FAQ entry
-   whose "keywords" are the significant words pulled from all
-   of its example questions, so the matcher recognizes many
-   different phrasings of the same question.
-   Re-run the CSV → JS conversion if you update the dataset.
-   ========================================================= */
+// Trained human responses for all hostel rules & guidelines
 const NN_RULES_FAQS = [
-  { tag:"checkin_checkout", label:"Check-in / Check-out", keywords:["check", "checkin", "checkout", "out", "timings"],
-    answer:"You can check in from <b>12:00 PM</b>, and check-out is by <b>11:00 AM</b>. If you need a bit more time, a late check-out is usually fine but may come with a small extra charge — just give the desk a heads-up." },
-  { tag:"curfew", label:"Curfew", keywords:["close", "curfew", "enter", "entry", "gates", "last", "late", "night"],
-    answer:"The main gate closes at <b>10:00 PM on weekdays</b> and <b>11:00 PM on weekends</b>. Coming in after that is fine, but you'll need to sign in at the security desk — if it starts happening a lot, the warden will want to have a quick chat about it." },
+  { tag:"checkin_checkout", label:"Check-in / Out", keywords:["check", "checkin", "checkout", "out", "timings"],
+    answer:"You can check in from <b>12:00 PM</b>, and check-out is by <b>11:00 AM</b>. If you need a little extra time, a late check-out is usually fine — just give our desk a quick heads-up!" },
+  { tag:"curfew", label:"Curfew Hours", keywords:["close", "curfew", "enter", "entry", "gates", "last", "late", "night"],
+    answer:"Our main gate closes at <b>10:00 PM on weekdays</b> and <b>11:00 PM on weekends</b>. Coming in after that is totally fine, just sign in at the security desk when you arrive!" },
   { tag:"visitors", label:"Visitors", keywords:["come", "family", "friends", "guests", "overnight", "room", "stay", "visit", "visitor", "visitors"],
-    answer:"Of course, friends and family can drop by! Visiting hours in the common areas are <b>9:00 AM to 8:00 PM</b>, just have them register at reception. Overnight stays need the warden's written okay in advance, and visitors can't come up to resident rooms — common areas only." },
-  { tag:"id_card", label:"ID card", keywords:["card", "carry", "enter", "id", "lose", "mandatory"],
-    answer:"Keep your hostel ID on you at all times — security will ask for it at the gate. If you ever lose it, just let us know right away and we'll get you a replacement for a small fee." },
-  { tag:"mess_dining", label:"Mess timings", keywords:["breakfast", "cook", "dining", "dinner", "food", "hall", "mess", "outside", "own", "served", "skip", "timings"],
-    answer:"Here's when the mess is open: <b>Breakfast</b> 7:30–9:30 AM, <b>Lunch</b> 12:30–2:30 PM, <b>Snacks</b> 5:00–6:00 PM, and <b>Dinner</b> 7:30–9:30 PM. Cooking in your room isn't allowed for fire safety, but you're welcome to bring in outside food and eat it in the common areas." },
-  { tag:"room_cleanliness", label:"Room cleanliness", keywords:["cleaning", "cleanliness", "cleans", "inspected", "keep", "messy", "often", "provided", "room", "rooms"],
-    answer:"Housekeeping handles the common areas every day, but your own room is on you to keep tidy. We do periodic room checks too, but don't worry — you'll always get advance notice before one happens." },
-  { tag:"noise", label:"Noise / Quiet hours", keywords:["hours", "loud", "make", "music", "night", "noise", "play", "quiet", "until"],
-    answer:"Quiet hours run from <b>10:00 PM to 6:00 AM</b> — so keep the music and chatter down during that window so everyone can get some sleep. Rest of the day, feel free to be as loud as you like!" },
-  { tag:"alcohol_smoking_drugs", label:"Alcohol / Smoking / Drugs", keywords:["alcohol", "drink", "drugs", "room", "smoking"],
-    answer:"This one's a hard no — smoking, alcohol, and drugs aren't allowed anywhere on the premises. It's taken seriously, and breaking this rule can get you expelled from the hostel." },
-  { tag:"electrical_appliances", label:"Electrical appliances", keywords:["appliances", "banned", "bring", "electrical", "heater", "iron", "kettle", "own", "room", "rooms", "use"],
-    answer:"High-power stuff like heaters, induction cooktops, and immersion rods have to stay out of rooms — they're a fire risk on shared wiring. But your everyday things — phone chargers, laptop, a table lamp — are all totally fine." },
+    answer:"Friends and family are welcome to visit in our common lounge from <b>9:00 AM to 8:00 PM</b> — just sign them in at reception. For overnight stays, you'll just need written approval from the warden in advance!" },
+  { tag:"id_card", label:"ID Card", keywords:["card", "carry", "enter", "id", "lose", "mandatory"],
+    answer:"Keep your hostel ID on you — security asks for it at the gate. If you ever lose it, just let us know at the desk and we'll get you a replacement!" },
+  { tag:"mess_dining", label:"Mess Timings", keywords:["breakfast", "cook", "dining", "dinner", "food", "hall", "mess", "outside", "own", "served", "skip", "timings"],
+    answer:"Here's when meals are served: <b>Breakfast</b> 7:30–9:30 AM, <b>Lunch</b> 12:30–2:30 PM, <b>Snacks</b> 5:00–6:00 PM, and <b>Dinner</b> 7:30–9:30 PM. Outside food is welcome in the common lounge!" },
+  { tag:"room_cleanliness", label:"Cleanliness", keywords:["cleaning", "cleanliness", "cleans", "inspected", "keep", "messy", "often", "provided", "room", "rooms"],
+    answer:"Housekeeping cleans all common areas daily, while your room is yours to keep tidy. We do periodic checks, but don't worry — you'll always get advance notice!" },
+  { tag:"noise", label:"Quiet Hours", keywords:["hours", "loud", "make", "music", "night", "noise", "play", "quiet", "until"],
+    answer:"Quiet hours run from <b>10:00 PM to 6:00 AM</b> so everyone gets a good night's sleep. During the day, feel free to study and enjoy music!" },
+  { tag:"alcohol_smoking_drugs", label:"Substances", keywords:["alcohol", "drink", "drugs", "room", "smoking"],
+    answer:"This one's a hard rule — smoking, alcohol, and drugs aren't allowed anywhere on the premises to maintain a safe, clean community for all residents." },
+  { tag:"electrical_appliances", label:"Appliances", keywords:["appliances", "banned", "bring", "electrical", "heater", "iron", "kettle", "own", "room", "rooms", "use"],
+    answer:"Your everyday electronics — laptops, phone chargers, table lamps — are all totally fine! Just high-power heaters or induction cooktops are banned for fire safety." },
   { tag:"laundry", label:"Laundry", keywords:["available", "clothes", "laundry", "machine", "service", "timings", "wash", "washing"],
-    answer:"There's a laundry area on every floor, open <b>6:00 AM to 9:00 PM</b>. If you'd rather not do it yourself, there's also a paid laundry service — just ask at reception for the details." },
-  { tag:"payment_fees", label:"Payment & fees", keywords:["deposit", "due", "fee", "fees", "late", "pay", "payment", "security"],
-    answer:"Fees are due in the first 5 days of each month — you can pay online or at the accounts office. Just try not to miss the window, since a late fee kicks in after that. There's also a refundable security deposit collected when you join." },
-  { tag:"damage_property", label:"Property damage", keywords:["broken", "damage", "damages", "fine", "furniture", "pays", "property", "room"],
-    answer:"If something in your room or a shared space gets damaged, the repair or replacement cost usually comes out of your security deposit, or gets billed separately if it's more than that covers." },
-  { tag:"room_change", label:"Room change", keywords:["change", "request", "room", "roommate", "single", "switch"],
-    answer:"Want to switch rooms? Just send a written request to the warden's office. It depends on availability, but approved changes usually go through within 3–5 working days." },
-  { tag:"safety_security", label:"Safety & security", keywords:["case", "cctv", "contact", "emergency", "issues", "measures", "place", "safety", "security"],
-    answer:"You're covered — CCTV monitors the common areas and entry points, and there's security on duty round the clock. If anything urgent comes up, head straight to the warden or the security desk; emergency numbers are also posted on every floor." },
-  { tag:"leave_outing", label:"Leave / Outing", keywords:["apply", "go", "home", "leave", "outing", "permission", "semester", "weekend"],
-    answer:"Heading out for more than a day? Just fill out a leave/outing form at reception and let the warden know before you go. For longer leaves, we may also need a nod from your parent or local guardian." },
-  { tag:"ragging_discipline", label:"Ragging & discipline", keywords:["actions", "bullying", "disciplinary", "discipline", "misbehave", "ragging", "tolerated"],
-    answer:"We take this seriously — ragging, bullying, and harassment of any kind aren't tolerated and lead straight to disciplinary action, up to suspension or expulsion. If something's going on, you can report it confidentially to the warden or the anti-ragging committee." },
+    answer:"Each floor has washing machines open <b>6:00 AM to 9:00 PM</b> daily. We also have a paid laundry service if you'd rather have your clothes ironed!" },
+  { tag:"payment_fees", label:"Fees & Deposit", keywords:["deposit", "due", "fee", "fees", "late", "pay", "payment", "security"],
+    answer:"Fees are due in the first 5 days of each month online or at the desk. There's also a refundable security deposit collected when you move in!" },
+  { tag:"room_change", label:"Room Change", keywords:["change", "request", "room", "roommate", "single", "switch"],
+    answer:"Want to switch rooms? Just send a quick written note to the warden's desk. Approved changes usually go through within 3–5 working days!" },
+  { tag:"safety_security", label:"Safety", keywords:["case", "cctv", "contact", "emergency", "issues", "measures", "place", "safety", "security"],
+    answer:"You're in safe hands — 24/7 security duty, CCTV in common corridors, and emergency contacts posted on every single floor." },
   { tag:"pets", label:"Pets", keywords:["keep", "pet", "pets"],
-    answer:"Sorry, pets aren't allowed in the hostel rooms or on the premises — it's a hygiene and safety thing." },
-  { tag:"gender_specific_access", label:"Gender-specific access", keywords:["access", "boys", "enter", "gender", "girls", "separate", "specific"],
-    answer:"The boys' and girls' hostels are kept separate, and you can only meet in the designated visiting areas during approved hours — no crossing over otherwise." },
-  { tag:"internet_wifi", label:"Internet / Wi-Fi", keywords:["available", "data", "fi", "internet", "limit", "wi", "wifi"],
-    answer:"Yep, Wi-Fi's available throughout the rooms and common areas. Just a fair-usage policy applies, and no accessing illegal or restricted content over the network." },
+    answer:"Sorry, pets aren't allowed in rooms due to hygiene and community safety." },
+  { tag:"internet_wifi", label:"Wi-Fi", keywords:["available", "data", "fi", "internet", "limit", "wi", "wifi"],
+    answer:"High-speed fiber Wi-Fi is available across all resident rooms, study areas, and common lounges for studies, streaming, and work!" }
 ];
 
-// All topics in one flat list, used to render the clickable tag chips below.
-// Chips show the rule-dataset tags first, followed by the hostel's own
-// custom facts (room types, fees, warden contact, location).
 const NN_ALL_TOPICS = [...NN_RULES_FAQS, ...NN_HOSTEL.faqs];
-
 const NN_STOPWORDS = new Set("a an the is are am was were be been being do does did i my me you your in on at to of for if can could should would will shall must have has had what when where who why how there here this that these those it its any allowed need needed permit permitted policy rule rules time times get got about with without into from as or and but not no yes so please tell during after before happen happens hostel".split(" "));
 
 function nnTokenize(text){
   return text.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w => w.length > 1 && !NN_STOPWORDS.has(w));
 }
 
-/* =========================================================
-   SOUND EFFECTS — synthesized with the Web Audio API, so no
-   external audio files are needed. Toggle with the 🔊 button.
-   ========================================================= */
-let nnAudioCtx = null;
-let nnSoundOn = true;
-
+let nnAudioCtx = null, nnSoundOn = true;
 function nnEnsureAudio(){
   if (!nnAudioCtx) {
-    try { nnAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-    catch (e) { nnAudioCtx = null; }
+    try { nnAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { nnAudioCtx = null; }
   }
   if (nnAudioCtx && nnAudioCtx.state === 'suspended') nnAudioCtx.resume();
 }
-
 function nnTone(freq, duration, type='sine', gainLevel=0.12, sweepTo=null, delay=0){
-  if (!nnSoundOn) return;
-  nnEnsureAudio();
-  if (!nnAudioCtx) return;
+  if (!nnSoundOn) return; nnEnsureAudio(); if (!nnAudioCtx) return;
   const t0 = nnAudioCtx.currentTime + delay;
-  const osc = nnAudioCtx.createOscillator();
-  const gain = nnAudioCtx.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, t0);
+  const osc = nnAudioCtx.createOscillator(), gain = nnAudioCtx.createGain();
+  osc.type = type; osc.frequency.setValueAtTime(freq, t0);
   if (sweepTo) osc.frequency.exponentialRampToValueAtTime(sweepTo, t0 + duration);
   gain.gain.setValueAtTime(gainLevel, t0);
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
   osc.connect(gain).connect(nnAudioCtx.destination);
-  osc.start(t0);
-  osc.stop(t0 + duration);
+  osc.start(t0); osc.stop(t0 + duration);
 }
-
 const nnSfx = {
   open:    () => { nnTone(660, 0.09, 'sine', 0.12); nnTone(880, 0.12, 'sine', 0.12, null, 0.08); },
   send:    () => nnTone(520, 0.06, 'square', 0.05),
@@ -390,128 +364,44 @@ const nnSfx = {
   wake:    () => nnTone(320, 0.28, 'sine', 0.07, 560)
 };
 
-// Set this to your deployed function's URL once you've deployed it, e.g.
-// "https://your-site.vercel.app/api/chat". Leave it as '/api/chat' if the
-// widget is hosted on the SAME domain as the function.
-//
-// ---- Making the AI backend sound human -----------------------------------
-// This widget only sends { message, history } to your endpoint — the actual
-// "personality" comes from the system prompt your backend gives the model.
-// In your /api/chat function, pass something like this as the system
-// instruction alongside the hostel facts (rooms/fees/rules/contact):
-//
-//   You are the friendly front-desk assistant for Nomad's Nest Hostel,
-//   chatting with residents and prospective residents. Sound like a real,
-//   warm staff member — not a policy document:
-//   - Use contractions (it's, you'll, don't) and short, natural sentences.
-//   - Vary your openers — don't start every reply the same way.
-//   - Lead with the direct answer, then add context only if it helps.
-//   - It's fine to show a little personality (a "no worries!", an emoji
-//     now and then) but don't overdo it.
-//   - If a question is genuinely outside hostel matters (rooms, fees,
-//     rules, timings, contact), say so and point them to the warden.
-//   - Never invent facts — stick to the details you're given below.
-//   - Keep replies to 2-4 sentences unless the question needs a list.
-//
-// Feed it the same FAQ facts as NN_HOSTEL/NN_RULES_FAQS below (or your own
-// source of truth) so it stays accurate while sounding conversational.
-const NN_API_ENDPOINT = "/api/chat";
-// If true, uses the smarter AI backend; falls back to local answers automatically
-// if the request fails (e.g. endpoint not deployed yet, offline, quota hit).
-const NN_USE_AI = true;
-
-/* ========================================================= */
-
 function nnPick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
 
 const NN_GREETING_REPLIES = [
-  `Hey, good to see you! 👋 I'm here to help with anything about <b>${NN_HOSTEL.name}</b> — rooms, fees, rules, timings, whatever you need. What's on your mind?`,
-  `Hi there! 👋 What can I help you with today — rooms, fees, or something about the hostel rules?`,
-  `Hey! Welcome. Ask away — I know most things about <b>${NN_HOSTEL.name}</b>, from fees to curfew timings.`
+  `Hey there! 👋 Welcome to <b>${NN_HOSTEL.name}</b>. I'm Alex at the desk — ask me anything about rooms, fees, curfew, or mess timings!`,
+  `Hi! 👋 Good to see you. What's on your mind today — room options, attached bathrooms, or fees?`,
+  `Hey! Welcome. Feel free to ask me anything about hostel life, fees, or timings!`
 ];
 const NN_BYE_REPLIES = [
-  "Anytime! Come back whenever you've got more questions — happy to help. 📚",
-  "You're welcome! I'm here if anything else comes up. 🙂",
-  "No problem at all — good luck, and reach out anytime!"
+  "Anytime! Reach out whenever you've got more questions. Have a great day! 😊",
+  "You're super welcome! I'm here if anything else comes up.",
+  "No problem at all! Good luck and talk soon 👋"
 ];
 const NN_FALLBACK_REPLIES = [
-  "Hmm, that one's outside what I know — best to check with the hostel warden directly for that. 🙂",
-  "I'm not totally sure on that one, sorry! The warden's office would be able to help — want their contact?",
-  "That's a bit outside my wheelhouse, but the warden can definitely sort it out for you."
+  "I want to make sure you get the exact answer — feel free to ask about room prices, attached bathrooms, curfew, or call the warden at +91 98765 43210! 😊",
+  "I'm here to help with all things Nomad's Nest Hostel! What can I check for you — rooms, fees, or mess timings?"
 ];
-const NN_SMALLTALK = [
-  { keywords:["how","are","you","doing"], match:t => /how('?s| is| are)?\s*(it going|you doing|you)/i.test(t),
-    replies:[
-      "I'm doing well, thanks for asking! Just here helping folks with hostel questions. What can I do for you?",
-      "Can't complain — running smooth today! What do you need help with?"
-    ]},
-  { keywords:["who","are","you","bot","human","real"], match:t => /(who|what)\s*are\s*you|are you (a )?(bot|human|real|ai)/i.test(t),
-    replies:[
-      "I'm the warden's desk bot for this hostel — think of me as the first stop for quick questions about rooms, fees, and rules. 🙂",
-      "I'm an assistant here to help with hostel stuff — rooms, fees, timings, that sort of thing!"
-    ]},
-  { keywords:["thank","thanks"], match:t => /^\s*(thanks|thank you|thx|ty)\b/i.test(t),
-    replies:["Happy to help! Anything else on your mind?", "Anytime! Let me know if something else comes up."]}
-];
-
-function nnFindSmallTalk(rawText){
-  for (const st of NN_SMALLTALK) {
-    if (st.match(rawText)) return nnPick(st.replies);
-  }
-  return null;
-}
 
 function nnFindAnswer(rawText){
   const text = rawText.toLowerCase();
   const tokens = new Set(nnTokenize(rawText));
 
-  const isGreeting = NN_HOSTEL.greetings.some(g => g.includes(" ") ? text.includes(g) : tokens.has(g));
-  const isBye = [...NN_HOSTEL.bye, ...NN_HOSTEL.thanks].some(g => g.includes(" ") ? text.includes(g) : tokens.has(g));
+  const isGreeting = NN_HOSTEL.greetings.some(g => text.includes(g) || tokens.has(g));
+  const isBye = [...NN_HOSTEL.bye, ...NN_HOSTEL.thanks].some(g => text.includes(g) || tokens.has(g));
   if (isGreeting) return nnPick(NN_GREETING_REPLIES);
   if (isBye) return nnPick(NN_BYE_REPLIES);
 
-  const smallTalk = nnFindSmallTalk(rawText);
-  if (smallTalk) return smallTalk;
-
   const allFaqs = [...NN_HOSTEL.faqs, ...NN_RULES_FAQS];
-
   let best = null, bestScore = 0;
   for (const faq of allFaqs) {
     let score = 0;
     for (const kw of faq.keywords) {
-      if (kw.includes(" ")) { if (text.includes(kw)) score += 2; }   // multi-word phrase
-      else if (tokens.has(kw)) score += 1;                            // single-word token match
+      if (kw.includes(" ")) { if (text.includes(kw)) score += 2; }
+      else if (tokens.has(kw)) score += 1;
     }
     if (score > bestScore) { bestScore = score; best = faq; }
   }
   if (best && bestScore > 0) return best.answer;
   return nnPick(NN_FALLBACK_REPLIES);
-}
-
-// Rolling short-term memory sent to the AI so it can follow up on context.
-let nnHistory = [];
-
-async function nnGetAnswer(rawText){
-  if (!NN_USE_AI) return nnFindAnswer(rawText);
-  try {
-    const res = await fetch(NN_API_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: rawText, history: nnHistory })
-    });
-    if (!res.ok) throw new Error('bad response');
-    const data = await res.json();
-    if (!data.reply) throw new Error('no reply');
-
-    nnHistory.push({ role: 'user', parts: [{ text: rawText }] });
-    nnHistory.push({ role: 'model', parts: [{ text: data.reply }] });
-    if (nnHistory.length > 12) nnHistory = nnHistory.slice(-12); // keep it short
-
-    return data.reply;
-  } catch (err) {
-    // AI backend not set up yet, offline, or rate-limited — fall back silently.
-    return nnFindAnswer(rawText);
-  }
 }
 
 (function(){
@@ -525,185 +415,141 @@ async function nnGetAnswer(rawText){
   const input = document.getElementById('nn-chat-input');
   const sendBtn = document.getElementById('nn-chat-send');
 
-  /* ---------- Drag the launcher anywhere on screen (+ shake detection) ---------- */
-  let dragging = false, moved = false, startX, startY, startLeft, startTop;
-  let lastX = null, lastDx = 0, reversalCount = 0, lastReversalReset = 0;
+  const LAUNCHER_SIZE = 62, EDGE_MARGIN = 6;
 
-  function clampToViewport(left, top){
-    const size = launcherWrap.offsetWidth;
-    const maxLeft = window.innerWidth - size - 6;
-    const maxTop = window.innerHeight - size - 6;
-    return {
-      left: Math.min(Math.max(6, left), maxLeft),
-      top: Math.min(Math.max(6, top), maxTop)
-    };
-  }
+  let dragging = false, moved = false, startX, startY, startLeft, startTop;
+  let lastX = 0, lastY = 0, lastT = 0, velocity = 0;
+
+  function clamp(val, min, max){ return Math.max(min, Math.min(max, val)); }
 
   function pointerDown(x, y){
-    dragging = true; moved = false;
-    startX = x; startY = y; lastX = x; lastDx = 0; reversalCount = 0; lastReversalReset = Date.now();
+    dragging = true; moved = false; startX = x; startY = y;
+    lastX = x; lastY = y; lastT = performance.now(); velocity = 0;
     const rect = launcherWrap.getBoundingClientRect();
     startLeft = rect.left; startTop = rect.top;
-    launcher.classList.add('nn-dragging');
-    wake();
+    launcher.classList.add('nn-dragging'); wake();
   }
   function pointerMove(x, y){
     if (!dragging) return;
     const dx = x - startX, dy = y - startY;
     if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
-    const { left, top } = clampToViewport(startLeft + dx, startTop + dy);
-    launcherWrap.style.left = left + 'px';
-    launcherWrap.style.top = top + 'px';
 
-    // shake detection: count quick left-right direction reversals
-    const stepDx = x - lastX;
-    if (Math.abs(stepDx) > 3) {
-      if (lastDx !== 0 && Math.sign(stepDx) !== Math.sign(lastDx)) reversalCount++;
-      lastDx = stepDx;
-    }
-    lastX = x;
-    const now = Date.now();
-    if (now - lastReversalReset > 700) { reversalCount = 0; lastReversalReset = now; }
-    if (reversalCount >= 3) { triggerShake(); reversalCount = 0; }
+    const now = performance.now();
+    const dt = Math.max(1, now - lastT);
+    const dist = Math.hypot(x - lastX, y - lastY);
+    velocity = dist / dt; // px per ms
+    lastX = x; lastY = y; lastT = now;
+
+    const maxLeft = window.innerWidth - LAUNCHER_SIZE - EDGE_MARGIN;
+    const maxTop = window.innerHeight - LAUNCHER_SIZE - EDGE_MARGIN;
+    const newLeft = clamp(startLeft + dx, EDGE_MARGIN, Math.max(EDGE_MARGIN, maxLeft));
+    const newTop = clamp(startTop + dy, EDGE_MARGIN, Math.max(EDGE_MARGIN, maxTop));
+    launcherWrap.style.left = newLeft + 'px';
+    launcherWrap.style.top = newTop + 'px';
   }
   function pointerUp(){
-    if (!dragging) return;
-    dragging = false;
+    if (!dragging) return; dragging = false;
     launcher.classList.remove('nn-dragging');
-    if (!moved) openPanel();      // it was a tap, not a drag
-    else positionPanelNearLauncher();
+    if (!moved) { openPanel(); }
+    else if (velocity > 1.1) { doShake(); } // flung it fast — give a fun wiggle
   }
 
-  function triggerShake(){
-    launcher.classList.remove('nn-shake'); // restart animation if already running
-    void launcher.offsetWidth;             // force reflow so the animation replays
-    launcher.classList.add('nn-dizzy', 'nn-shake');
-    nnSfx.shake();
-    setTimeout(() => launcher.classList.remove('nn-dizzy', 'nn-shake'), 700);
-  }
-
-  /* ---------- Eyes follow the cursor ---------- */
   function updateEyeTracking(mx, my){
     if (!eyesTrack) return;
     const rect = launcher.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
     const dx = mx - cx, dy = my - cy;
     const dist = Math.hypot(dx, dy) || 1;
-    const pull = Math.min(1, dist / 250);
-    const maxOffset = 0.55; // svg user-units
-    const nx = (dx / dist) * pull * maxOffset;
-    const ny = (dy / dist) * pull * maxOffset;
-    eyesTrack.style.transform = `translate(${nx}px, ${ny}px)`;
+    eyesTrack.style.transform = `translate(${(dx / dist) * Math.min(1, dist / 250) * 0.55}px, ${(dy / dist) * Math.min(1, dist / 250) * 0.55}px)`;
   }
   window.addEventListener('mousemove', e => updateEyeTracking(e.clientX, e.clientY), { passive:true });
 
-  /* ---------- Sparkle burst (used when the chat opens) ---------- */
-  function burstSparkles(){
-    const rect = launcher.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
-    const colors = ['#7FE0C9', '#E3A23C', '#D9634A'];
-    for (let i = 0; i < 8; i++){
-      const s = document.createElement('span');
-      s.className = 'nn-sparkle';
-      const angle = (Math.PI * 2 * i) / 8 + Math.random() * 0.4;
-      const dist = 34 + Math.random() * 18;
-      s.style.setProperty('--nx', Math.cos(angle) * dist + 'px');
-      s.style.setProperty('--ny', Math.sin(angle) * dist + 'px');
-      s.style.left = cx + 'px';
-      s.style.top = cy + 'px';
-      s.style.background = colors[i % colors.length];
-      document.body.appendChild(s);
-      setTimeout(() => s.remove(), 750);
-    }
-  }
-
+  // Mouse drag
   launcher.addEventListener('mousedown', e => { pointerDown(e.clientX, e.clientY); e.preventDefault(); });
   window.addEventListener('mousemove', e => pointerMove(e.clientX, e.clientY));
   window.addEventListener('mouseup', pointerUp);
 
+  // Touch drag (phones/tablets) — the widget can be dragged anywhere on screen
   launcher.addEventListener('touchstart', e => {
     const t = e.touches[0]; pointerDown(t.clientX, t.clientY);
   }, { passive:true });
   window.addEventListener('touchmove', e => {
     if (!dragging) return;
     const t = e.touches[0]; pointerMove(t.clientX, t.clientY);
-  }, { passive:true });
+    e.preventDefault();
+  }, { passive:false });
   window.addEventListener('touchend', pointerUp);
 
+  // Keep the widget on-screen if the window is resized after dragging
   window.addEventListener('resize', () => {
     const rect = launcherWrap.getBoundingClientRect();
-    const { left, top } = clampToViewport(rect.left, rect.top);
-    launcherWrap.style.left = left + 'px';
-    launcherWrap.style.top = top + 'px';
+    const maxLeft = window.innerWidth - LAUNCHER_SIZE - EDGE_MARGIN;
+    const maxTop = window.innerHeight - LAUNCHER_SIZE - EDGE_MARGIN;
+    if (rect.left > maxLeft || rect.top > maxTop) {
+      launcherWrap.style.left = clamp(rect.left, EDGE_MARGIN, Math.max(EDGE_MARGIN, maxLeft)) + 'px';
+      launcherWrap.style.top = clamp(rect.top, EDGE_MARGIN, Math.max(EDGE_MARGIN, maxTop)) + 'px';
+    }
   });
 
-  /* ---------- Idle sleep: robot dozes off after inactivity, wakes on interaction ---------- */
-  const IDLE_MS = 20000; // time with no interaction before it falls asleep
-  let idleTimer = null;
-
-  function sleep(){
-    launcher.classList.add('nn-sleepy');
-    launcherWrap.classList.add('nn-wrap-sleepy');
-    nnSfx.sleep();
+  // Double-click / double-tap → playful shake + dizzy-eyes wiggle
+  function doShake(){
+    wake();
+    launcher.classList.remove('nn-shake'); void launcher.offsetWidth;
+    launcher.classList.add('nn-shake', 'nn-dizzy');
+    nnSfx.shake();
+    clearTimeout(doShake._t);
+    doShake._t = setTimeout(() => {
+      launcher.classList.remove('nn-shake', 'nn-dizzy');
+    }, 800);
   }
+  launcher.addEventListener('dblclick', doShake);
+  let tapCount = 0, tapTimer = null;
+  launcher.addEventListener('touchend', () => {
+    tapCount++;
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => { tapCount = 0; }, 320);
+    if (tapCount === 2) { tapCount = 0; doShake(); }
+  });
+
+  let idleTimer = null;
   function wake(){
-    const wasSleeping = launcher.classList.contains('nn-sleepy');
+    const wasSleepy = launcher.classList.contains('nn-sleepy');
     launcher.classList.remove('nn-sleepy');
     launcherWrap.classList.remove('nn-wrap-sleepy');
+    if (wasSleepy) nnSfx.wake();
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(sleep, IDLE_MS);
-    if (wasSleeping) nnSfx.wake();
-    nnEnsureAudio(); // unlock audio on the first real user gesture
+    idleTimer = setTimeout(() => {
+      launcher.classList.add('nn-sleepy');
+      launcherWrap.classList.add('nn-wrap-sleepy');
+      nnSfx.sleep();
+    }, 14000);
+    nnEnsureAudio();
   }
-  ['mousedown','touchstart','keydown','click'].forEach(evt =>
-    document.addEventListener(evt, wake, { passive:true })
-  );
-  wake(); // start the timer on page load
-
-  /* ---------- Position the panel next to wherever the button is ---------- */
-  function positionPanelNearLauncher(){
-    const rect = launcherWrap.getBoundingClientRect();
-    const panelW = 340, panelH = 480;
-    let left = rect.left;
-    let top = rect.top - panelH - 10;          // prefer opening above the button
-
-    if (top < 10) top = rect.bottom + 10;       // not enough room above -> open below
-    if (left + panelW > window.innerWidth - 10) left = window.innerWidth - panelW - 10;
-    if (left < 10) left = 10;
-    if (top + panelH > window.innerHeight - 10) top = window.innerHeight - panelH - 10;
-    if (top < 10) top = 10;
-
-    panel.style.left = left + 'px';
-    panel.style.top = top + 'px';
-  }
+  ['mousedown','touchstart','keydown','click'].forEach(evt => document.addEventListener(evt, wake, { passive:true }));
+  wake();
 
   function openPanel(){
-    positionPanelNearLauncher();
     panel.classList.add('nn-open');
-    burstSparkles();
     nnSfx.open();
     if (body.children.length === 0) {
-      addMessage(`Hi! I'm the warden's desk bot for <b>${NN_HOSTEL.name}</b>. Ask me about hostel related question 📚`, 'bot');
+      addMessage(`Hi! I'm Alex at the front desk for <b>${NN_HOSTEL.name}</b> 👋 Ask me about rooms, attached bathrooms, fees, or curfew!`, 'bot');
       addChips();
     }
     input.focus();
   }
 
-  /* ---------- Chat logic ---------- */
   function addMessage(text, sender){
     const div = document.createElement('div');
     div.className = 'nn-msg nn-' + sender;
     div.innerHTML = text;
     body.appendChild(div);
     body.scrollTop = body.scrollHeight;
-    if (sender === 'bot' && antenna) {
-      antenna.classList.remove('nn-happy');
-      void antenna.offsetWidth; // restart animation if already running
-      antenna.classList.add('nn-happy');
+    if (sender === 'bot') {
+      antenna.classList.remove('nn-happy'); void antenna.offsetWidth; antenna.classList.add('nn-happy');
       nnSfx.receive();
     }
   }
+
   function addChips(){
     const wrap = document.createElement('div');
     wrap.className = 'nn-chips';
@@ -712,20 +558,16 @@ async function nnGetAnswer(rawText){
       chip.className = 'nn-chip';
       chip.textContent = topic.label;
       chip.onclick = () => {
-        wake();
-        addMessage(topic.label, 'user');
-        nnSfx.send();
+        wake(); addMessage(topic.label, 'user'); nnSfx.send();
         showTyping();
-        setTimeout(() => {
-          hideTyping();
-          addMessage(topic.answer, 'bot');
-        }, 260); // tiny delay so it still feels like a reply, not an instant swap
+        setTimeout(() => { hideTyping(); addMessage(topic.answer, 'bot'); }, 260);
       };
       wrap.appendChild(chip);
     });
     body.appendChild(wrap);
     body.scrollTop = body.scrollHeight;
   }
+
   function showTyping(){
     const t = document.createElement('div');
     t.className = 'nn-typing'; t.id = 'nn-typing-indicator';
@@ -734,33 +576,22 @@ async function nnGetAnswer(rawText){
   }
   function hideTyping(){ const t = document.getElementById('nn-typing-indicator'); if (t) t.remove(); }
 
-  // Longer replies "take longer to type" — mimics natural pacing instead of
-  // an instant, robotic swap from typing dots to full answer.
-  function nnTypingDelay(text){
-    const len = (text || '').replace(/<[^>]+>/g, '').length;
-    return 350 + Math.min(1400, len * 11) + Math.random() * 250;
-  }
-
   function sendMessage(){
     const text = input.value.trim();
     if (!text) return;
-    wake();
-    addMessage(text, 'user');
-    nnSfx.send();
-    input.value = '';
-    showTyping();
-    nnGetAnswer(text).then(reply => {
+    wake(); addMessage(text, 'user'); nnSfx.send();
+    input.value = ''; showTyping();
+    setTimeout(() => {
       hideTyping();
+      const reply = nnFindAnswer(text);
       addMessage(reply, 'bot');
-    });
+    }, 300);
   }
 
   const soundToggle = document.getElementById('nn-sound-toggle');
   soundToggle.addEventListener('click', () => {
-    nnSoundOn = !nnSoundOn;
-    soundToggle.textContent = nnSoundOn ? '🔊' : '🔇';
-    nnEnsureAudio();
-    if (nnSoundOn) nnSfx.open();
+    nnSoundOn = !nnSoundOn; soundToggle.textContent = nnSoundOn ? '🔊' : '🔇';
+    nnEnsureAudio(); if (nnSoundOn) nnSfx.open();
   });
 
   closeBtn.addEventListener('click', () => panel.classList.remove('nn-open'));
