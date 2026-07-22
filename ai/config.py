@@ -10,6 +10,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
+def _default_model() -> Path:
+    custom = Path("models/custom/yolov8s_v4_production.pt")
+    if custom.is_file():
+        return custom
+    return Path("models/yolov8n.pt")
+
+
 @dataclass(frozen=True)
 class AIConfig:
     """Immutable settings for one pipeline run.
@@ -28,7 +35,7 @@ class AIConfig:
     """
 
     source: str | int = 0
-    model_path: Path = field(default_factory=lambda: Path("models/yolov8n.pt"))
+    model_path: Path = field(default_factory=_default_model)
     confidence_threshold: float = 0.5
     person_class_id: int = 0
     night_start_hour: int = 22
@@ -50,9 +57,9 @@ class AIConfig:
 
 
 if __name__ == "__main__":
-    # ponytail: one assert-based check for trust-boundary validation
     cfg = AIConfig(confidence_threshold=0.6, crowd_threshold=3)
     assert cfg.confidence_threshold == 0.6
+    assert cfg.source == 0
     try:
         AIConfig(confidence_threshold=1.5)
         raise AssertionError("expected ValueError")

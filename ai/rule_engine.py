@@ -32,7 +32,10 @@ def _track_point(track) -> Point:
 
 
 class RestrictedZoneRule(Rule):
-    """Person center enters a restricted polygon."""
+    """Person center *enters* a restricted polygon (edge-triggered)."""
+
+    def __init__(self) -> None:
+        self._inside: dict[str, set[int]] = defaultdict(set)
 
     @property
     def name(self) -> str:
@@ -40,22 +43,32 @@ class RestrictedZoneRule(Rule):
 
     def evaluate(self, context: RuleContext) -> Sequence[Incident]:
         out: list[Incident] = []
+        present: dict[str, set[int]] = defaultdict(set)
         for track in context.tracks:
             pt = _track_point(track)
             for zone in context.zones.zones_containing(pt):
-                if not zone.restricted:
-                    continue
+                if zone.restricted:
+                    present[zone.zone_id].add(track.track_id)
+
+        for zone in context.zones.zones():
+            if not zone.restricted:
+                continue
+            zid = zone.zone_id
+            prev = self._inside[zid]
+            curr = present.get(zid, set())
+            for tid in curr - prev:
                 out.append(
                     Incident(
                         incident_type=IncidentType.RESTRICTED_ZONE_ENTRY,
                         severity=Severity.HIGH,
-                        reason=f"Person track {track.track_id} entered restricted zone '{zone.name}'",
+                        reason=f"Person track {tid} entered restricted zone '{zone.name}'",
                         timestamp=context.timestamp,
-                        track_ids=(track.track_id,),
-                        zone_ids=(zone.zone_id,),
+                        track_ids=(tid,),
+                        zone_ids=(zid,),
                         metadata={"camera_id": context.camera_id},
                     )
                 )
+            self._inside[zid] = set(curr)
         return out
 
 

@@ -62,11 +62,15 @@ class IncidentEngine:
                 if existing_id and existing_id in self._active:
                     stored = self._active[existing_id]
                     last = datetime.fromisoformat(stored.last_seen)
+                    if now - last < self._cooldown:
+                        # refresh presence without extending alert cadence incorrectly:
+                        # only update last_seen when we would not emit anyway? keep presence clock
+                        stored.reason = inc.reason
+                        stored.track_ids = list(inc.track_ids)
+                        continue
                     stored.last_seen = now.isoformat()
                     stored.reason = inc.reason
                     stored.track_ids = list(inc.track_ids)
-                    if now - last < self._cooldown:
-                        continue
                     # cooldown elapsed → re-emit as update
                     emitted.append(stored)
                     continue

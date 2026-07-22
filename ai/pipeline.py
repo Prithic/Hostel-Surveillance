@@ -133,3 +133,7 @@ class GuardianPipeline:
         if frame is None:
             return None
         return self.process_frame(frame)
+
+    @property
+    def is_live(self) -> bool:
+        return bool(self._stream is not None and getattr(self._stream, "_is_live", False))

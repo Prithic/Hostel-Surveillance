@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Camera, ShieldAlert, Users, Video, VideoOff, Activity } from 'lucide-react'
+import { Camera, ShieldAlert, Users, VideoOff, Activity } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
 import StatCard from '../components/StatCard'
 import Badge from '../components/Badge'
@@ -66,12 +66,28 @@ export default function SecurityDashboard() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <GlassCard hover={false} className="p-5 lg:col-span-2">
-          <h2 className="mb-4 font-display text-sm font-semibold text-ink2">Live camera status</h2>
-          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-100 bg-ink p-10 text-center">
-            {status.camera_online ? <Video className="h-10 w-10 text-success" /> : <VideoOff className="h-10 w-10 text-danger" />}
-            <p className="text-sm font-medium text-white/90">{status.camera_id || 'webcam-0'}</p>
-            <Badge tone={status.camera_online ? 'success' : 'danger'}>{status.camera_online ? 'online' : 'offline'}</Badge>
-            <p className="text-xs text-white/50">Event-based monitoring — no facial recognition</p>
+          <h2 className="mb-4 font-display text-sm font-semibold text-ink2">Live camera</h2>
+          <div className="overflow-hidden rounded-xl border border-slate-100 bg-ink">
+            {status.camera_online ? (
+              <img
+                src={`${API}/api/stream`}
+                alt="Live CCTV feed"
+                className="aspect-video w-full object-contain"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-3 p-10 text-center">
+                <VideoOff className="h-10 w-10 text-danger" />
+                <p className="text-sm font-medium text-white/90">{status.camera_id || 'webcam-0'}</p>
+                <Badge tone="danger">offline</Badge>
+                <p className="text-xs text-white/50">Event-based monitoring — no facial recognition</p>
+              </div>
+            )}
+            {status.camera_online && (
+              <div className="flex items-center justify-between px-3 py-2 text-xs text-white/70">
+                <span>{status.camera_id}</span>
+                <Badge tone="success">online</Badge>
+              </div>
+            )}
           </div>
         </GlassCard>
 
