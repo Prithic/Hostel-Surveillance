@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# AI artifacts
+*.pt
+models/*.pt
+models/*.onnx
+models/*.engine
+videos/*
+!videos/.gitkeep
+datasets/*
+!datasets/.gitkeep
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Node (frontend later)
+node_modules/
+dist/
