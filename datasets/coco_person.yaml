@@ -1,0 +1,7 @@
+# Public COCO person-only export (after running download_coco_person.py).
+path: public/coco_person
+train: images/train
+val: images/val
+
+names:
+  0: person

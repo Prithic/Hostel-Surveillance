@@ -6,15 +6,28 @@ __pycache__/
 venv/
 .env
 
-# AI artifacts
+# Weights & Ultralytics runs
 *.pt
 models/*.pt
 models/*.onnx
 models/*.engine
+runs/
 videos/*
 !videos/.gitkeep
-datasets/*
-!datasets/.gitkeep
+
+# Dataset media & downloads (keep scripts, yaml, docs, .gitkeep)
+datasets/**/images/**
+datasets/**/labels/**
+datasets/**/raw/**
+datasets/**/downloads/**
+datasets/**/*.jpg
+datasets/**/*.jpeg
+datasets/**/*.png
+datasets/**/*.bmp
+datasets/**/*.webp
+datasets/**/*.json
+datasets/**/*.zip
+!datasets/**/.gitkeep
 
 # IDE / OS
 .idea/

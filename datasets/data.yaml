@@ -1,0 +1,8 @@
+# GuardianAI fine-tune target (custom hostel + optional public merge).
+# Paths are relative to this file's directory (Ultralytics resolves `path`).
+path: hostel_person
+train: images/train
+val: images/val
+
+names:
+  0: person
