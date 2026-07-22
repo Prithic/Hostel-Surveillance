@@ -1,0 +1,18 @@
+# Transfer learning config — DO NOT auto-start long runs
+model: models/custom/yolov8s_v4_production.pt
+data: datasets/guardian_synthetic/dataset.yaml
+epochs: 40
+imgsz: 640
+batch: 8
+patience: 15
+device: 0
+workers: 4
+optimizer: AdamW
+lr0: 0.0005
+lrf: 0.01
+pretrained: true
+project: runs/detect
+name: guardian_synthetic_ft
+exist_ok: true
+# Est. VRAM: ~4–6 GB at batch 8 imgsz 640 (YOLOv8s)
+# Est. time: ~20–60 min on mid GPU for ~18 base images + augs

@@ -23,14 +23,16 @@ datasets/**/images/**
 datasets/**/labels/**
 datasets/**/raw/**
 datasets/**/downloads/**
-datasets/**/*.jpg
-datasets/**/*.jpeg
-datasets/**/*.png
-datasets/**/*.bmp
-datasets/**/*.webp
-datasets/**/*.json
-datasets/**/*.zip
+datasets/**/augmented/**
+datasets/guardian_synthetic/yolo/**
+datasets/guardian_synthetic/raw/**
+datasets/guardian_synthetic/augmented/**
 !datasets/**/.gitkeep
+!datasets/**/*.md
+!datasets/**/*.yaml
+!datasets/**/*.csv
+!datasets/**/*.json
+!datasets/**/*.jsonl
 
 # IDE / OS
 .idea/

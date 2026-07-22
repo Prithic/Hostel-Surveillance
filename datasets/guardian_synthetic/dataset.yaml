@@ -1,0 +1,8 @@
+# GuardianAI synthetic CCTV person dataset
+path: D:/Hackathons/HACKSPRINT/datasets/guardian_synthetic/yolo
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: person

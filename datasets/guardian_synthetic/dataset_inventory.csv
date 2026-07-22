@@ -1,0 +1,5 @@
+filename,duration,fps,resolution,category,source,extract_fps,path
+Student_walking_in_dark_corridor_202607221839.mp4,10.00,24.000,1280x720,walking_dark,synthetic,2.0,videos\synthetic\Student_walking_in_dark_corridor_202607221839.mp4
+Student_walks_through_dark_corridor_202607221829.mp4,10.00,24.000,1280x720,walking_dark,synthetic,2.0,videos\synthetic\Student_walks_through_dark_corridor_202607221829.mp4
+Student_walks_through_hostel_cor…_202607221811.mp4,10.00,24.000,1280x720,walking,synthetic,2.0,videos\synthetic\Student_walks_through_hostel_cor…_202607221811.mp4
+Students_walk_through_hostel_cor…_202607221825.mp4,10.00,24.000,1280x720,crowd,synthetic,4.0,videos\synthetic\Students_walk_through_hostel_cor…_202607221825.mp4
