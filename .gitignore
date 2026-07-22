@@ -25,3 +25,5 @@ Thumbs.db
 # Node (frontend later)
 node_modules/
 dist/
+nestos/
+
