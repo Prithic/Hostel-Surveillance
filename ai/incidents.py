@@ -93,6 +93,8 @@ class IncidentEngine:
                 self._active[sid] = stored
                 self._by_key[key] = sid
                 self._history.append(stored)
+                if len(self._history) > 1000:
+                    self._history.pop(0)
                 emitted.append(stored)
         return emitted
 
@@ -103,3 +105,17 @@ class IncidentEngine:
     def list_open(self) -> list[StoredIncident]:
         with self._lock:
             return [i for i in self._active.values() if i.status == "open"]
+
+    def resolve(self, incident_id: str) -> bool:
+        """Mark an incident resolved. Returns False if not found."""
+        with self._lock:
+            inc = self._active.get(incident_id)
+            if inc is None:
+                # Check history for already-archived incidents
+                for h in self._history:
+                    if h.id == incident_id:
+                        h.status = "resolved"
+                        return True
+                return False
+            inc.status = "resolved"
+            return True

@@ -5,13 +5,6 @@ import GlassCard from '../components/GlassCard'
 
 const API = import.meta.env.VITE_API_URL || ''
 
-const quickQuestions = [
-  'What happened?',
-  'Show latest incident',
-  'Current alerts',
-  'Camera status',
-]
-
 async function getBotReply(message) {
   try {
     const res = await fetch(`${API}/api/chat`, {
@@ -23,9 +16,19 @@ async function getBotReply(message) {
     const data = await res.json()
     return data.reply
   } catch {
-    return "Backend unreachable. Start the API (`uvicorn backend.main:app --port 8000`) and ask about incidents or alerts."
+    return 'Backend is offline. Start the backend server to get live incident data and alerts.'
   }
 }
+
+const quickQuestions = [
+  'What happened recently?',
+  'Show current alerts',
+  'Camera status',
+  'Incident summary',
+  'Any tailgating incidents?',
+  'Any restricted zone entries?',
+]
+
 
 export default function Chatbot() {
   const [messages, setMessages] = useState([
@@ -73,9 +76,10 @@ export default function Chatbot() {
               <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${m.from === 'student' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'}`}>
                 {m.from === 'student' ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
               </div>
-              <div className={`max-w-[75%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm ${m.from === 'student' ? 'rounded-br-sm bg-primary text-white' : 'rounded-bl-sm bg-slate-100 text-ink2'}`}>
-                {m.text}
-              </div>
+              <div 
+                className={`max-w-[75%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm ${m.from === 'student' ? 'rounded-br-sm bg-primary text-white' : 'rounded-bl-sm bg-slate-100 text-ink2'}`}
+                dangerouslySetInnerHTML={{ __html: m.text }}
+              />
             </motion.div>
           ))}
           {typing && (

@@ -17,7 +17,7 @@ export default function SOS() {
   return (
     <div className="space-y-6">
       <GlassCard hover={false} className="flex flex-col items-center gap-5 px-6 py-14 text-center">
-        <p className="text-sm text-slate-500">Press and hold only in a genuine emergency. This alerts security, your warden and your parents instantly.</p>
+        <p className="text-sm text-white/55">Press and hold only in a genuine emergency. This alerts security, your warden and your parents instantly.</p>
 
         <div className="relative flex h-40 w-40 items-center justify-center">
           {triggered && (
@@ -46,7 +46,7 @@ export default function SOS() {
               <CheckCircle2 className="h-4 w-4" /> Alert sent — security and your contacts have been notified
             </motion.div>
           ) : (
-            <motion.p key="idle" className="text-xs text-slate-400">One tap SOS</motion.p>
+            <motion.p key="idle" className="text-xs text-white/45">One tap SOS</motion.p>
           )}
         </AnimatePresence>
       </GlassCard>
@@ -58,9 +58,9 @@ export default function SOS() {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-medium text-ink2">{c.name}</p>
-              <p className="text-xs text-slate-400">{c.role}</p>
-              <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500"><Phone className="h-3 w-3" />{c.phone}</p>
+              <p className="text-sm font-medium text-white">{c.name}</p>
+              <p className="text-xs text-white/45">{c.role}</p>
+              <p className="mt-0.5 flex items-center gap-1 text-xs text-white/55"><Phone className="h-3 w-3" />{c.phone}</p>
             </div>
           </GlassCard>
         ))}
@@ -71,10 +71,11 @@ export default function SOS() {
           <MapPin className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-sm font-medium text-ink2">Live location shared on SOS</p>
-          <p className="text-xs text-slate-400">Block B, Room 204 — Green Valley Hostel Campus</p>
+          <p className="text-sm font-medium text-white">Location sharing on SOS</p>
+          <p className="text-xs text-white/45">Warden is notified with your registered room. Precise GPS requires device permission.</p>
         </div>
       </GlassCard>
     </div>
   )
 }
+

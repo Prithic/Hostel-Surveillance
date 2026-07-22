@@ -5,22 +5,86 @@
 * { scroll-behavior: smooth; }
 
 body {
-  background: #F8FAFC;
+  background: #0B1120;
+  color: rgba(255, 255, 255, 0.87);
 }
 
-/* Liquid glass surface */
+/* =========================================================================
+   LIQUID TRANSPARENT SYSTEM — no frosted glass, no borders, no blur-behind-
+   content. Every panel is just softly tinted transparency so the dark
+   aurora backdrop shows straight through, with a slow-drifting internal
+   colour wash giving the "liquid" motion instead of any glossy glass edge.
+   ========================================================================= */
+
 .glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  position: relative;
+  background: rgba(255,255,255,0.035);
+  overflow: hidden;
+  box-shadow: 0 24px 60px -24px rgba(0,0,0,0.6);
+}
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background:
+    radial-gradient(closest-side, rgba(37,99,235,0.22), transparent 70%),
+    radial-gradient(closest-side, rgba(168,85,247,0.16), transparent 70%);
+  background-position: 15% 20%, 85% 80%;
+  background-repeat: no-repeat;
+  filter: blur(40px);
+  animation: liquidFlow 11s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .glass-light {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* "Liquid" — the primary surface for the whole app shell, dashboard
+   included. Purely transparent (no backdrop blur, no border) so the same
+   dark aurora backdrop reads straight through every panel; the only
+   texture is a slow-drifting internal colour wash. */
+.liquid-glass {
+  position: relative;
+  background: rgba(255,255,255,0.035);
+  overflow: hidden;
+  box-shadow: 0 20px 44px -22px rgba(0,0,0,0.55);
+}
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background:
+    radial-gradient(closest-side, rgba(37,99,235,0.16), transparent 70%),
+    radial-gradient(closest-side, rgba(34,197,94,0.12), transparent 70%);
+  background-position: 20% 25%, 80% 75%;
+  background-repeat: no-repeat;
+  filter: blur(46px);
+  animation: liquidFlow 13s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes liquidFlow {
+  0%, 100% { transform: translate3d(-6%, -4%, 0) scale(1) rotate(0deg); }
+  50% { transform: translate3d(6%, 4%, 0) scale(1.08) rotate(3deg); }
+}
+
+/* Tinted liquid glass variants — colored translucent "glass pills" for
+   buttons and accents, iOS26 control-center style. */
+.liquid-tint-primary { background: linear-gradient(180deg, rgba(37,99,235,0.92), rgba(37,99,235,0.78)); box-shadow: 0 1px 1px rgba(255,255,255,0.5) inset, 0 -10px 18px -10px rgba(0,0,0,0.25) inset, 0 14px 30px -12px rgba(37,99,235,0.55); }
+.liquid-tint-success { background: linear-gradient(180deg, rgba(34,197,94,0.92), rgba(34,197,94,0.78)); box-shadow: 0 1px 1px rgba(255,255,255,0.5) inset, 0 -10px 18px -10px rgba(0,0,0,0.25) inset, 0 14px 30px -12px rgba(34,197,94,0.55); }
+.liquid-tint-warning { background: linear-gradient(180deg, rgba(245,158,11,0.92), rgba(245,158,11,0.78)); box-shadow: 0 1px 1px rgba(255,255,255,0.5) inset, 0 -10px 18px -10px rgba(0,0,0,0.25) inset, 0 14px 30px -12px rgba(245,158,11,0.55); }
+.liquid-tint-danger { background: linear-gradient(180deg, rgba(239,68,68,0.92), rgba(239,68,68,0.78)); box-shadow: 0 1px 1px rgba(255,255,255,0.5) inset, 0 -10px 18px -10px rgba(0,0,0,0.25) inset, 0 14px 30px -12px rgba(239,68,68,0.55); }
+
+/* Plain transparent input control — no blur, just a hairline border */
+.liquid-input {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.12);
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.liquid-input:focus-within {
+  border-color: rgba(255,255,255,0.3);
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.2);
+  background: rgba(255,255,255,0.05);
 }
 
 /* Aurora mesh background, mouse-reactive via CSS vars set in JS */
@@ -40,6 +104,7 @@ body {
   filter: blur(90px);
   opacity: 0.55;
   transition: transform 0.4s ease-out;
+  animation: blobMove 18s ease-in-out infinite;
 }
 .aurora-bg::before {
   background: radial-gradient(circle at center, #2563EB, transparent 70%);
@@ -51,6 +116,20 @@ body {
   bottom: -20vw;
   right: -20vw;
   opacity: 0.25;
+  animation-delay: 3s;
+}
+/* Third floating liquid blob for extra depth */
+.aurora-bg .blob-3 {
+  position: absolute;
+  width: 42vw;
+  height: 42vw;
+  top: 55%;
+  left: 55%;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.22;
+  background: radial-gradient(circle at center, #A855F7, transparent 70%);
+  animation: blobMove 22s ease-in-out infinite reverse;
 }
 
 .grid-overlay {
@@ -59,8 +138,80 @@ body {
   background-size: 44px 44px;
 }
 
+/* Dashboard-shell backdrop — same dark ink base and mouse-reactive aurora
+   blobs as the login/landing screens (.aurora-bg), just dimmed slightly so
+   it reads as ambient depth behind the transparent panels rather than a
+   light show. Class name kept as .liquid-bg-light for backwards
+   compatibility with existing markup, but it now renders the dark aurora
+   treatment. */
+.liquid-bg-light {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #0B1120;
+}
+.liquid-bg-light::before,
+.liquid-bg-light::after {
+  content: '';
+  position: absolute;
+  width: 50vw;
+  height: 50vw;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.32;
+  transition: transform 0.5s ease-out;
+  animation: floatSlow 10s ease-in-out infinite, blobMove 20s ease-in-out infinite;
+}
+.liquid-bg-light::before {
+  background: radial-gradient(circle at center, #2563EB, transparent 70%);
+  top: calc(var(--lmy, 10%) - 26vw);
+  left: calc(var(--lmx, 15%) - 26vw);
+}
+.liquid-bg-light::after {
+  background: radial-gradient(circle at center, #22C55E, transparent 70%);
+  bottom: -18vw;
+  right: -14vw;
+  opacity: 0.2;
+  animation-delay: 2s;
+}
+.liquid-bg-light .blob-amber {
+  position: absolute;
+  width: 36vw;
+  height: 36vw;
+  top: 30%;
+  right: 10%;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.16;
+  background: radial-gradient(circle at center, #A855F7, transparent 70%);
+  animation: blobMove 24s ease-in-out infinite reverse;
+}
+
+/* Subtle diagonal shine sweep on card hover — a bit of liquid motion. */
+.card-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.55) 45%, transparent 60%);
+  transform: translateX(-140%);
+  transition: transform 0.7s ease;
+  pointer-events: none;
+}
+.card-shine:hover::after {
+  transform: translateX(140%);
+}
+
+/* Shimmer skeleton / progress fill */
+.shimmer-bg {
+  background: linear-gradient(90deg, rgba(148,163,184,0.15) 25%, rgba(148,163,184,0.35) 37%, rgba(148,163,184,0.15) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 2.4s linear infinite;
+}
+
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: rgba(37,99,235,0.35); border-radius: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.35); border-radius: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
 @media (prefers-reduced-motion: reduce) {

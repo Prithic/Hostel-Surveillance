@@ -1,22 +1,22 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
-  ScanFace, MessageSquareWarning, Shirt, Utensils, CalendarCheck, UserCheck,
-  Siren, Bot, ShieldCheck, ArrowRight, Building2,
+  MessageSquareWarning, Shirt, Utensils, CalendarCheck, UserCheck,
+  Siren, ClipboardList, ShieldCheck, ArrowRight, Building2,
 } from 'lucide-react'
 import AnimatedBackground from '../components/AnimatedBackground'
 import LiquidNav from '../components/LiquidNav'
 
 const features = [
-  { icon: ScanFace, title: 'Face Recognition', desc: 'Contactless entry and attendance, verified in under a second.' },
+  { icon: ShieldCheck, title: 'AI Security Monitoring', desc: 'Live camera analysis detects restricted zone entry, crowd surges, and tailgating in real time.' },
   { icon: MessageSquareWarning, title: 'Complaint Management', desc: 'Log an issue, track it live, watch it get resolved.' },
   { icon: Shirt, title: 'Laundry', desc: 'Book a slot, follow your clothes from wash to ready.' },
   { icon: Utensils, title: 'Mess', desc: 'Daily menus, timings and one-tap food feedback.' },
   { icon: CalendarCheck, title: 'Attendance', desc: 'Automatic check-in and check-out, no queues.' },
   { icon: UserCheck, title: 'Visitor Management', desc: 'OTP-verified visitor entry with a full history log.' },
   { icon: Siren, title: 'Emergency SOS', desc: 'One tap alerts security, your warden and your parents.' },
-  { icon: Bot, title: 'AI Chatbot', desc: 'Ask anything about the hostel, get an answer instantly.' },
-  { icon: ShieldCheck, title: 'Security Monitoring', desc: 'Live camera status and anomaly alerts in one view.' },
+  { icon: ClipboardList, title: 'Room Inspection', desc: 'Scheduled checks and past results, tracked per room.' },
+  { icon: ArrowRight, title: 'AI Warden Assistant', desc: 'Ask about incidents, alerts, camera status — answered from live data, not a script.' },
 ]
 
 export default function Landing() {
@@ -35,7 +35,7 @@ export default function Landing() {
         </div>
         <button
           onClick={() => navigate('/login')}
-          className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/90 backdrop-blur-md transition hover:bg-white/10"
+          className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/90 transition hover:bg-white/10"
         >
           Login
         </button>
@@ -74,7 +74,7 @@ export default function Landing() {
           </button>
           <a
             href="#about"
-            className="rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm text-white/80 backdrop-blur-md transition hover:bg-white/10"
+            className="rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm text-white/80 transition hover:bg-white/10"
           >
             Learn more
           </a>
@@ -107,7 +107,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="border-t border-white/10 px-6 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-sm text-white/40 md:flex-row">
-          <span>© 2026 NestOS. Frontend demo — no backend connected.</span>
+          <span>© 2026 GuardianAI. Privacy-first AI security monitoring for hostels.</span>
           <div className="flex gap-5">
             <a href="#about" className="hover:text-white/70">About</a>
             <button onClick={() => navigate('/login')} className="hover:text-white/70">Login</button>
@@ -118,3 +118,4 @@ export default function Landing() {
     </AnimatedBackground>
   )
 }
+

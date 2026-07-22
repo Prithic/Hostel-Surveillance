@@ -1,9 +1,9 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, DoorOpen, CalendarCheck, FileClock, Megaphone, Wallet,
   MessageSquareWarning, Utensils, Shirt, Search, UserCheck, Siren,
-  ClipboardList, Boxes, BarChart3, Bot, Settings, LogOut, Building2,
+  ClipboardList, Boxes, BarChart3, Settings, LogOut, Building2, ShieldCheck, Bot,
 } from 'lucide-react'
 
 const nav = [
@@ -21,53 +21,78 @@ const nav = [
   { to: '/sos', label: 'Emergency SOS', icon: Siren },
   { to: '/inspection', label: 'Room Inspection', icon: ClipboardList },
   { to: '/inventory', label: 'Inventory', icon: Boxes },
-  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/chatbot', label: 'AI Chatbot', icon: Bot },
-  { to: '/security', label: 'Security', icon: Siren },
+  { to: '/analytics', label: 'AI Analytics', icon: BarChart3 },
+  { to: '/chatbot', label: 'AI Assistant', icon: Bot },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function Sidebar({ open, onNavigate }) {
   const navigate = useNavigate()
+  const location = useLocation()
+
   return (
     <motion.aside
       initial={false}
-      animate={{ width: open ? 256 : 0 }}
+      animate={{ width: open ? 272 : 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-      className="hidden md:block h-screen sticky top-0 overflow-hidden border-r border-slate-200 bg-white"
+      className="hidden md:block h-screen sticky top-0 shrink-0 overflow-hidden"
     >
-      <div className="flex h-full w-64 flex-col">
-        <div className="flex items-center gap-2 px-5 py-5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
-            <Building2 className="h-4 w-4" />
+      <div className="flex h-full w-[272px] flex-col gap-3 p-3">
+        <div className="liquid-glass relative overflow-hidden rounded-3xl px-4 py-4">
+          <div className="flex items-center gap-2.5">
+            <motion.div
+              whileHover={{ rotate: -8, scale: 1.06 }}
+              className="flex h-9 w-9 items-center justify-center rounded-xl liquid-tint-primary text-white shadow-liquid"
+            >
+              <Building2 className="h-4 w-4" />
+            </motion.div>
+            <div>
+              <span className="font-display block text-lg font-bold leading-none tracking-tight text-white">GuardianAI</span>
+              <span className="text-[11px] font-medium text-white/45">Security Platform</span>
+            </div>
           </div>
-          <span className="font-display text-lg font-semibold text-ink2">NestOS</span>
         </div>
 
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-4">
-          {nav.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={onNavigate}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-                  isActive
-                    ? 'bg-primary/10 font-medium text-primary'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-ink2'
-                }`
-              }
-            >
-              <Icon className="h-4 w-4" strokeWidth={1.75} />
-              {label}
-            </NavLink>
-          ))}
+        <nav className="liquid-glass relative flex-1 space-y-0.5 overflow-y-auto rounded-3xl px-2.5 py-3">
+          {nav.map(({ to, label, icon: Icon }) => {
+            const active = location.pathname === to
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                onClick={onNavigate}
+                className="group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors duration-200"
+              >
+                {active && (
+                  <motion.span
+                    layoutId="sidebar-active-blob"
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                    className="absolute inset-0 rounded-2xl liquid-tint-primary shadow-liquid"
+                  />
+                )}
+                <Icon
+                  className={`relative z-10 h-4 w-4 transition-colors ${active ? 'text-white' : 'text-white/55 group-hover:text-white'}`}
+                  strokeWidth={1.75}
+                />
+                <span className={`relative z-10 transition-colors ${active ? 'font-medium text-white' : 'text-white/55 group-hover:text-white'}`}>
+                  {label}
+                </span>
+              </NavLink>
+            )
+          })}
         </nav>
 
-        <div className="border-t border-slate-100 p-3">
+        <div className="liquid-glass relative space-y-0.5 overflow-hidden rounded-3xl p-2.5">
+          <button
+            onClick={() => navigate('/admin-login')}
+            className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-xs text-white/45 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
+            Admin access
+          </button>
           <button
             onClick={() => navigate('/')}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-500 transition-colors hover:bg-danger/10 hover:text-danger"
+            className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm text-white/55 transition-colors hover:bg-danger/10 hover:text-danger"
           >
             <LogOut className="h-4 w-4" strokeWidth={1.75} />
             Logout

@@ -23,6 +23,21 @@ export const statSummary = {
   laundryStatus: 'Washing',
 }
 
+export const roomInfo = [
+  { label: 'Room Number', value: 'B-204' },
+  { label: 'Hostel Block', value: 'Block B' },
+  { label: 'Floor', value: '2nd Floor' },
+  { label: 'Room Type', value: 'Twin Sharing' },
+  { label: 'Warden Name', value: 'Mrs. Kavita Rao' },
+  { label: 'Caretaker', value: 'Mr. Suresh Nair' },
+  { label: 'Contact Number', value: '+91 98765 43210' },
+]
+
+export const roommates = [
+  { name: 'Rohit Sharma', course: 'B.Tech CSE, 2nd Year' },
+  { name: 'Aarav Mehta', course: 'B.Tech CSE, 2nd Year' },
+]
+
 export const attendanceLog = [
   { date: '2026-07-20', checkIn: '08:02 AM', checkOut: '09:55 PM', status: 'Present', method: 'Face Recognition' },
   { date: '2026-07-19', checkIn: '08:10 AM', checkOut: '09:40 PM', status: 'Present', method: 'QR Code' },
@@ -116,6 +131,21 @@ export const inspections = [
   { id: 2, date: '2026-05-15', result: 'Warning', remarks: 'Table found damaged' },
 ]
 
+export const leaveRequests = [
+  { id: 'LV-014', reason: 'Family function', from: '2026-07-28', to: '2026-07-30', status: 'Approved', appliedOn: '2026-07-20' },
+  { id: 'LV-011', reason: 'Medical appointment', from: '2026-07-10', to: '2026-07-12', status: 'Approved', appliedOn: '2026-07-08' },
+  { id: 'LV-009', reason: 'Personal work', from: '2026-06-15', to: '2026-06-16', status: 'Rejected', appliedOn: '2026-06-12' },
+  { id: 'LV-016', reason: 'Home visit', from: '2026-08-05', to: '2026-08-08', status: 'Pending', appliedOn: '2026-07-21' },
+]
+
+export const notificationPrefs = {
+  complaintUpdates: true,
+  noticeAlerts: true,
+  feeReminders: true,
+  laundryReady: false,
+  messFeedback: false,
+}
+
 export const emergencyContacts = [
   { name: 'Security Desk', role: 'Security', phone: '+91 98765 43210' },
   { name: 'Mrs. Kavita Rao', role: 'Warden', phone: '+91 98765 11223' },
@@ -175,3 +205,4 @@ export const quickQuestions = [
 export function fakeApi(data, delay = 400) {
   return new Promise((resolve) => setTimeout(() => resolve(data), delay))
 }
+

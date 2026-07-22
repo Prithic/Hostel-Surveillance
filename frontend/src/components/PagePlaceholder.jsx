@@ -12,9 +12,10 @@ export default function PagePlaceholder({ icon: Icon, title, description }) {
             <Icon className="h-6 w-6" />
           </div>
         )}
-        <h2 className="font-display text-xl font-semibold text-ink2">{title}</h2>
-        <p className="max-w-sm text-sm text-slate-500">{description}</p>
+        <h2 className="font-display text-xl font-semibold text-white">{title}</h2>
+        <p className="max-w-sm text-sm text-white/55">{description}</p>
       </GlassCard>
     </motion.div>
   )
 }
+

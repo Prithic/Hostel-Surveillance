@@ -21,9 +21,12 @@ export default function AnimatedBackground({ children }) {
       onMouseMove={handleMouseMove}
       className="relative min-h-screen w-full overflow-hidden bg-ink"
     >
-      <div className="aurora-bg" />
+      <div className="aurora-bg">
+        <div className="blob-3" />
+      </div>
       <div className="grid-overlay absolute inset-0 pointer-events-none" />
       <div className="relative z-10">{children}</div>
     </div>
   )
 }
+

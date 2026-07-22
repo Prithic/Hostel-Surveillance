@@ -7,7 +7,7 @@ export default function Attendance() {
     <GlassCard hover={false} className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
+          <thead className="bg-white/5 text-xs uppercase tracking-wide text-white/45">
             <tr>
               <th className="px-5 py-3 font-medium">Date</th>
               <th className="px-5 py-3 font-medium">Check In</th>
@@ -18,14 +18,14 @@ export default function Attendance() {
           </thead>
           <tbody>
             {attendanceLog.map((row) => (
-              <tr key={row.date} className="border-t border-slate-100">
-                <td className="px-5 py-3 text-ink2">{row.date}</td>
-                <td className="px-5 py-3 text-slate-500">{row.checkIn}</td>
-                <td className="px-5 py-3 text-slate-500">{row.checkOut}</td>
+              <tr key={row.date} className="border-t border-white/10">
+                <td className="px-5 py-3 text-white">{row.date}</td>
+                <td className="px-5 py-3 text-white/55">{row.checkIn}</td>
+                <td className="px-5 py-3 text-white/55">{row.checkOut}</td>
                 <td className="px-5 py-3">
                   <Badge tone={row.status === 'Present' ? 'success' : 'danger'}>{row.status}</Badge>
                 </td>
-                <td className="px-5 py-3 text-slate-500">{row.method}</td>
+                <td className="px-5 py-3 text-white/55">{row.method}</td>
               </tr>
             ))}
           </tbody>
@@ -34,3 +34,4 @@ export default function Attendance() {
     </GlassCard>
   )
 }
+
