@@ -1,0 +1,16 @@
+{
+  "zones": [
+    {
+      "zone_id": "restricted_a",
+      "name": "Restricted Area A",
+      "restricted": true,
+      "polygon": [[360, 40], [620, 40], [620, 280], [360, 280]]
+    },
+    {
+      "zone_id": "gate",
+      "name": "Main Gate",
+      "restricted": true,
+      "polygon": [[40, 300], [280, 300], [280, 460], [40, 460]]
+    }
+  ]
+}
