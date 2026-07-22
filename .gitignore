@@ -14,6 +14,9 @@ models/*.engine
 runs/
 videos/*
 !videos/.gitkeep
+*.mp4
+*.zip
+YOLOv8s_*.zip
 
 # Dataset media & downloads (keep scripts, yaml, docs, .gitkeep)
 datasets/**/images/**

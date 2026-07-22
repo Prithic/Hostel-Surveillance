@@ -2,33 +2,34 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Send, Bot, User, Sparkles } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
-import { chatbotFAQ, quickQuestions } from '../data/dummyData'
 
-// ---------------------------------------------------------------------------
-// This page is intentionally wired for a real backend/LLM.
-// Swap `getBotReply()` for a call to your friend's backend, e.g.:
-//
-//   async function getBotReply(message) {
-//     const res = await fetch('/api/chatbot', {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ message }),
-//     })
-//     const data = await res.json()
-//     return data.reply
-//   }
-//
-// Everything else (message list, input, quick questions) stays the same.
-// ---------------------------------------------------------------------------
-function getBotReply(message) {
-  const key = Object.keys(chatbotFAQ).find((k) => message.toLowerCase().includes(k))
-  const reply = key ? chatbotFAQ[key] : "I'm a demo bot right now — once connected to the backend, I'll answer anything about the hostel."
-  return new Promise((resolve) => setTimeout(() => resolve(reply), 500))
+const API = import.meta.env.VITE_API_URL || ''
+
+const quickQuestions = [
+  'What happened?',
+  'Show latest incident',
+  'Current alerts',
+  'Camera status',
+]
+
+async function getBotReply(message) {
+  try {
+    const res = await fetch(`${API}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    })
+    if (!res.ok) throw new Error('chat failed')
+    const data = await res.json()
+    return data.reply
+  } catch {
+    return "Backend unreachable. Start the API (`uvicorn backend.main:app --port 8000`) and ask about incidents or alerts."
+  }
 }
 
 export default function Chatbot() {
   const [messages, setMessages] = useState([
-    { from: 'bot', text: "Hi! I'm your hostel assistant. Ask me about mess timings, laundry, leave, or tap a quick question below." },
+    { from: 'bot', text: "Hi — I'm the GuardianAI warden assistant. Ask what happened, latest incident, or current alerts." },
   ])
   const [input, setInput] = useState('')
   const [typing, setTyping] = useState(false)
@@ -57,8 +58,8 @@ export default function Chatbot() {
             <Bot className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-sm font-medium text-ink2">Hostel Assistant</p>
-            <p className="text-xs text-slate-400">Demo replies — connect your backend to go live</p>
+            <p className="text-sm font-medium text-ink2">GuardianAI Assistant</p>
+            <p className="text-xs text-slate-400">Incident-aware replies via /api/chat</p>
           </div>
         </div>
 
@@ -72,51 +73,44 @@ export default function Chatbot() {
               <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${m.from === 'student' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'}`}>
                 {m.from === 'student' ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
               </div>
-              <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${m.from === 'student' ? 'rounded-br-sm bg-primary text-white' : 'rounded-bl-sm bg-slate-100 text-ink2'}`}>
+              <div className={`max-w-[75%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm ${m.from === 'student' ? 'rounded-br-sm bg-primary text-white' : 'rounded-bl-sm bg-slate-100 text-ink2'}`}>
                 {m.text}
               </div>
             </motion.div>
           ))}
           {typing && (
-            <div className="flex items-center gap-2 pl-9 text-xs text-slate-400">
-              <span className="flex gap-1">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.2s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.1s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
-              </span>
-              typing…
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <Sparkles className="h-3.5 w-3.5" /> Thinking…
             </div>
           )}
           <div ref={endRef} />
         </div>
 
         <form
+          className="flex gap-2 border-t border-slate-100 p-4"
           onSubmit={(e) => { e.preventDefault(); sendMessage(input) }}
-          className="flex items-center gap-2 border-t border-slate-100 p-3"
         >
           <input
+            className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about mess, laundry, leave, WiFi…"
-            className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            placeholder="Ask about incidents or alerts…"
           />
-          <button className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary/90">
+          <button type="submit" className="rounded-xl bg-primary px-3 py-2 text-white">
             <Send className="h-4 w-4" />
           </button>
         </form>
       </GlassCard>
 
-      <GlassCard hover={false} className="h-fit p-5">
-        <div className="mb-3 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <h2 className="font-display text-sm font-semibold text-ink2">Quick questions</h2>
-        </div>
+      <GlassCard hover={false} className="h-fit p-4">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Quick questions</p>
         <div className="flex flex-col gap-2">
           {quickQuestions.map((q) => (
             <button
               key={q}
+              type="button"
               onClick={() => sendMessage(q)}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-left text-xs text-slate-600 transition hover:border-primary hover:bg-primary/5 hover:text-primary"
+              className="rounded-lg border border-slate-100 px-3 py-2 text-left text-sm text-ink2 hover:bg-slate-50"
             >
               {q}
             </button>

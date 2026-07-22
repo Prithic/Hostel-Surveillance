@@ -1,78 +1,122 @@
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
-import { Camera, ShieldAlert, ScanFace, Video, VideoOff } from 'lucide-react'
+import { Camera, ShieldAlert, Users, Video, VideoOff, Activity } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
 import StatCard from '../components/StatCard'
 import Badge from '../components/Badge'
-import { securityAlerts, cameraFeeds, analytics } from '../data/dummyData'
 
-const levelTone = { high: 'danger', medium: 'warning', low: 'info' }
-const COLORS = ['#2563EB', '#E2E8F0']
+const API = import.meta.env.VITE_API_URL || ''
+const levelTone = { critical: 'danger', high: 'danger', medium: 'warning', low: 'info' }
 
 export default function SecurityDashboard() {
+  const [status, setStatus] = useState({ camera_online: false, fps: 0, person_count: 0, camera_id: '—' })
+  const [alerts, setAlerts] = useState([])
+  const [incidents, setIncidents] = useState([])
+  const [error, setError] = useState('')
+
+  async function refresh() {
+    try {
+      const [s, a, i] = await Promise.all([
+        fetch(`${API}/api/status`).then((r) => r.json()),
+        fetch(`${API}/api/alerts?limit=20`).then((r) => r.json()),
+        fetch(`${API}/api/incidents?limit=20`).then((r) => r.json()),
+      ])
+      setStatus(s)
+      setAlerts(a)
+      setIncidents(i)
+      setError('')
+    } catch (e) {
+      setError('Backend offline — start: uvicorn backend.main:app --reload --port 8000')
+    }
+  }
+
+  useEffect(() => {
+    refresh()
+    const t = setInterval(refresh, 2000)
+    let ws
+    try {
+      const wsUrl = (API || `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:8000`) + '/ws/alerts'
+      ws = new WebSocket(API ? API.replace(/^http/, 'ws') + '/ws/alerts' : `ws://${location.hostname}:8000/ws/alerts`)
+      ws.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data)
+          if (msg.type === 'alert' && msg.incident) {
+            setAlerts((prev) => [msg.incident, ...prev].slice(0, 20))
+          }
+        } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+    return () => {
+      clearInterval(t)
+      ws?.close()
+    }
+  }, [])
+
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">{error}</div>
+      )}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard icon={Camera} label="Cameras Online" value={`${cameraFeeds.filter(c => c.status === 'online').length}/${cameraFeeds.length}`} tone="success" />
-        <StatCard icon={ScanFace} label="Faces Verified Today" value="284" tone="primary" />
-        <StatCard icon={ShieldAlert} label="Active Alerts" value={securityAlerts.filter(a => a.status === 'Reviewing').length} tone="danger" />
-        <StatCard icon={Video} label="Visitors On-Site" value="3" tone="warning" />
+        <StatCard icon={Camera} label="Camera" value={status.camera_online ? 'Online' : 'Offline'} tone={status.camera_online ? 'success' : 'danger'} />
+        <StatCard icon={Users} label="People tracked" value={String(status.person_count ?? 0)} tone="primary" />
+        <StatCard icon={ShieldAlert} label="Open alerts" value={String(alerts.length)} tone="danger" />
+        <StatCard icon={Activity} label="Pipeline FPS" value={(status.fps ?? 0).toFixed?.(1) ?? '0'} tone="warning" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Camera grid */}
         <GlassCard hover={false} className="p-5 lg:col-span-2">
-          <h2 className="mb-4 font-display text-sm font-semibold text-ink2">Camera feeds</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {cameraFeeds.map((cam) => (
-              <motion.div
-                key={cam.id}
-                whileHover={{ y: -2 }}
-                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-100 bg-ink p-4 text-center"
-              >
-                {cam.status === 'online' ? (
-                  <Video className="h-6 w-6 text-success" />
-                ) : (
-                  <VideoOff className="h-6 w-6 text-danger" />
-                )}
-                <p className="text-xs font-medium text-white/80">{cam.name}</p>
-                <Badge tone={cam.status === 'online' ? 'success' : 'danger'}>{cam.status}</Badge>
-              </motion.div>
-            ))}
+          <h2 className="mb-4 font-display text-sm font-semibold text-ink2">Live camera status</h2>
+          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-100 bg-ink p-10 text-center">
+            {status.camera_online ? <Video className="h-10 w-10 text-success" /> : <VideoOff className="h-10 w-10 text-danger" />}
+            <p className="text-sm font-medium text-white/90">{status.camera_id || 'webcam-0'}</p>
+            <Badge tone={status.camera_online ? 'success' : 'danger'}>{status.camera_online ? 'online' : 'offline'}</Badge>
+            <p className="text-xs text-white/50">Event-based monitoring — no facial recognition</p>
           </div>
         </GlassCard>
 
-        {/* Occupancy */}
         <GlassCard hover={false} className="p-5">
-          <h2 className="mb-2 font-display text-sm font-semibold text-ink2">Hostel occupancy</h2>
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={analytics.occupancy} dataKey="value" nameKey="name" innerRadius={55} outerRadius={80} paddingAngle={3}>
-                  {analytics.occupancy.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          <h2 className="mb-4 font-display text-sm font-semibold text-ink2">System status</h2>
+          <ul className="space-y-2 text-sm text-slate-600">
+            <li>Health: {error ? 'degraded' : 'ok'}</li>
+            <li>FPS: {(status.fps ?? 0).toFixed?.(1) ?? 0}</li>
+            <li>People: {status.person_count ?? 0}</li>
+            <li>Incidents logged: {incidents.length}</li>
+          </ul>
         </GlassCard>
       </div>
 
-      {/* Alerts */}
       <GlassCard hover={false} className="p-5">
-        <h2 className="mb-4 font-display text-sm font-semibold text-ink2">Security alerts</h2>
+        <h2 className="mb-4 font-display text-sm font-semibold text-ink2">Alert panel</h2>
         <div className="space-y-3">
-          {securityAlerts.map((a) => (
-            <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-4 py-3">
+          {alerts.length === 0 && <p className="text-sm text-slate-400">No alerts yet — walk into a restricted zone to test.</p>}
+          {alerts.map((a) => (
+            <motion.div
+              key={a.id + a.last_seen}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-4 py-3"
+            >
               <div className="flex items-center gap-3">
-                <div className={`h-2 w-2 rounded-full ${a.level === 'high' ? 'bg-danger' : a.level === 'medium' ? 'bg-warning' : 'bg-primary'}`} />
+                <div className={`h-2 w-2 rounded-full ${a.severity === 'high' || a.severity === 'critical' ? 'bg-danger' : a.severity === 'medium' ? 'bg-warning' : 'bg-primary'}`} />
                 <div>
-                  <p className="text-sm text-ink2">{a.title}</p>
-                  <p className="text-xs text-slate-400">{a.time}</p>
+                  <p className="text-sm text-ink2">{a.reason}</p>
+                  <p className="text-xs text-slate-400">{a.id} · {a.camera_id} · tracks [{(a.track_ids || []).join(', ')}] · {a.timestamp}</p>
                 </div>
               </div>
-              <Badge tone={levelTone[a.level]}>{a.status}</Badge>
+              <Badge tone={levelTone[a.severity] || 'info'}>{a.severity}</Badge>
+            </motion.div>
+          ))}
+        </div>
+      </GlassCard>
+
+      <GlassCard hover={false} className="p-5">
+        <h2 className="mb-4 font-display text-sm font-semibold text-ink2">Incident history</h2>
+        <div className="space-y-2">
+          {incidents.map((i) => (
+            <div key={i.id} className="flex justify-between rounded-lg border border-slate-50 px-3 py-2 text-sm">
+              <span className="text-ink2">{i.id}: {i.incident_type}</span>
+              <span className="text-slate-400">{i.severity}</span>
             </div>
           ))}
         </div>
