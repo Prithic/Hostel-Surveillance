@@ -3,7 +3,7 @@
 <style>body{font-family:sans-serif;background:#F5EFE4;padding:60px;color:#182B3A;}</style>
 </head><body>
 <h1>This is a preview page</h1>
-<p>Try dragging the robot button anywhere on the screen, then tap it (without dragging) to open the chat.</p>
+<p>Try: (1) dragging it side-to-side quickly to see the shake/spin reaction, (2) leaving it alone for ~20 seconds to see it doze off with "z z z", (3) tap it to open the chat.</p>
 <!-- ==================================================================
      NOMAD'S NEST HOSTEL — CHATBOT WIDGET (drop-in)
      Paste this WHOLE block just before the closing </body> tag of
@@ -42,6 +42,37 @@
   @keyframes nn-blink{
     0%,88%,100%{ transform:scaleY(1); }
     92%{ transform:scaleY(0.15); }
+  }
+
+  /* ---- face states: awake (default) / sleepy (idle) / dizzy (shaken) ---- */
+  .nn-face-sleepy, .nn-face-dizzy{ display:none; }
+  #nn-chat-launcher.nn-sleepy .nn-face-awake{ display:none; }
+  #nn-chat-launcher.nn-sleepy .nn-face-sleepy{ display:block; }
+  #nn-chat-launcher.nn-dizzy .nn-face-awake{ display:none; }
+  #nn-chat-launcher.nn-dizzy .nn-face-dizzy{ display:block; }
+
+  .nn-zzz{
+    position:absolute; top:-14px; right:-6px;
+    font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600;
+    color:#7FE0C9; opacity:0; pointer-events:none;
+  }
+  #nn-chat-launcher.nn-sleepy .nn-zzz{ animation:nn-zzz-float 2.4s ease-in-out infinite; }
+  @keyframes nn-zzz-float{
+    0%{ opacity:0; transform:translateY(4px) scale(.7); }
+    25%{ opacity:1; transform:translateY(-4px) scale(1); }
+    70%{ opacity:0; transform:translateY(-16px) scale(1.1); }
+    100%{ opacity:0; transform:translateY(-16px) scale(1.1); }
+  }
+
+  /* ---- shake reaction: playful spin + wobble ---- */
+  #nn-chat-launcher.nn-shake{ animation:nn-shake-spin .7s ease-in-out; }
+  @keyframes nn-shake-spin{
+    0%{ transform:rotate(0deg) scale(1); }
+    15%{ transform:rotate(-18deg) scale(1.06); }
+    35%{ transform:rotate(300deg) scale(1.1); }
+    55%{ transform:rotate(340deg) scale(1.06); }
+    75%{ transform:rotate(370deg) scale(1.08); }
+    100%{ transform:rotate(360deg) scale(1); }
   }
 
   #nn-chat-panel{
@@ -113,12 +144,29 @@
     <rect x="4" y="7.5" width="16" height="14" rx="6" fill="none" stroke="#F5EFE4" stroke-width="1.6"></rect>
     <!-- face plate -->
     <rect x="6.3" y="10.5" width="11.4" height="8" rx="4" fill="#0F1F2B"></rect>
-    <!-- eyes -->
-    <ellipse class="nn-bot-eye nn-left" cx="9.7" cy="14.5" rx="1.15" ry="1.5" fill="#7FE0C9"></ellipse>
-    <ellipse class="nn-bot-eye nn-right" cx="14.3" cy="14.5" rx="1.15" ry="1.5" fill="#7FE0C9"></ellipse>
-    <!-- smile -->
-    <path d="M9.8 16.9c.9.75 3.5.75 4.4 0" stroke="#7FE0C9" stroke-width="1.1" stroke-linecap="round" fill="none"></path>
+
+    <!-- AWAKE face (default) -->
+    <g class="nn-face-awake">
+      <ellipse class="nn-bot-eye nn-left" cx="9.7" cy="14.5" rx="1.15" ry="1.5" fill="#7FE0C9"></ellipse>
+      <ellipse class="nn-bot-eye nn-right" cx="14.3" cy="14.5" rx="1.15" ry="1.5" fill="#7FE0C9"></ellipse>
+      <path d="M9.8 16.9c.9.75 3.5.75 4.4 0" stroke="#7FE0C9" stroke-width="1.1" stroke-linecap="round" fill="none"></path>
+    </g>
+
+    <!-- SLEEPY face (idle too long) -->
+    <g class="nn-face-sleepy">
+      <path d="M8.6 14.5c.6-.6 1.8-.6 2.4 0" stroke="#7FE0C9" stroke-width="1.1" stroke-linecap="round" fill="none"></path>
+      <path d="M13.2 14.5c.6-.6 1.8-.6 2.4 0" stroke="#7FE0C9" stroke-width="1.1" stroke-linecap="round" fill="none"></path>
+      <path d="M10.4 17.1c.5.4 1.9.4 2.4 0" stroke="#7FE0C9" stroke-width="1" stroke-linecap="round" fill="none"></path>
+    </g>
+
+    <!-- DIZZY face (just got shaken) -->
+    <g class="nn-face-dizzy">
+      <path d="M8.7 13.6l1.7 1.7M10.4 13.6l-1.7 1.7" stroke="#7FE0C9" stroke-width="1" stroke-linecap="round"></path>
+      <path d="M13.4 13.6l1.7 1.7M15.1 13.6l-1.7 1.7" stroke="#7FE0C9" stroke-width="1" stroke-linecap="round"></path>
+      <ellipse cx="12" cy="17" rx="1.1" ry="0.8" stroke="#7FE0C9" stroke-width="1" fill="none"></ellipse>
+    </g>
   </svg>
+  <span class="nn-zzz">z z z</span>
   <span class="nn-dot"></span>
 </button>
 
@@ -211,8 +259,9 @@ function nnFindAnswer(rawText){
   const input = document.getElementById('nn-chat-input');
   const sendBtn = document.getElementById('nn-chat-send');
 
-  /* ---------- Drag the launcher anywhere on screen ---------- */
+  /* ---------- Drag the launcher anywhere on screen (+ shake detection) ---------- */
   let dragging = false, moved = false, startX, startY, startLeft, startTop;
+  let lastX = null, lastDx = 0, reversalCount = 0, lastReversalReset = 0;
 
   function clampToViewport(left, top){
     const size = launcher.offsetWidth;
@@ -226,10 +275,11 @@ function nnFindAnswer(rawText){
 
   function pointerDown(x, y){
     dragging = true; moved = false;
-    startX = x; startY = y;
+    startX = x; startY = y; lastX = x; lastDx = 0; reversalCount = 0; lastReversalReset = Date.now();
     const rect = launcher.getBoundingClientRect();
     startLeft = rect.left; startTop = rect.top;
     launcher.classList.add('nn-dragging');
+    wake();
   }
   function pointerMove(x, y){
     if (!dragging) return;
@@ -238,6 +288,17 @@ function nnFindAnswer(rawText){
     const { left, top } = clampToViewport(startLeft + dx, startTop + dy);
     launcher.style.left = left + 'px';
     launcher.style.top = top + 'px';
+
+    // shake detection: count quick left-right direction reversals
+    const stepDx = x - lastX;
+    if (Math.abs(stepDx) > 3) {
+      if (lastDx !== 0 && Math.sign(stepDx) !== Math.sign(lastDx)) reversalCount++;
+      lastDx = stepDx;
+    }
+    lastX = x;
+    const now = Date.now();
+    if (now - lastReversalReset > 700) { reversalCount = 0; lastReversalReset = now; }
+    if (reversalCount >= 3) { triggerShake(); reversalCount = 0; }
   }
   function pointerUp(){
     if (!dragging) return;
@@ -245,6 +306,13 @@ function nnFindAnswer(rawText){
     launcher.classList.remove('nn-dragging');
     if (!moved) openPanel();      // it was a tap, not a drag
     else positionPanelNearLauncher();
+  }
+
+  function triggerShake(){
+    launcher.classList.remove('nn-shake'); // restart animation if already running
+    void launcher.offsetWidth;             // force reflow so the animation replays
+    launcher.classList.add('nn-dizzy', 'nn-shake');
+    setTimeout(() => launcher.classList.remove('nn-dizzy', 'nn-shake'), 700);
   }
 
   launcher.addEventListener('mousedown', e => { pointerDown(e.clientX, e.clientY); e.preventDefault(); });
@@ -266,6 +334,21 @@ function nnFindAnswer(rawText){
     launcher.style.left = left + 'px';
     launcher.style.top = top + 'px';
   });
+
+  /* ---------- Idle sleep: robot dozes off after inactivity, wakes on interaction ---------- */
+  const IDLE_MS = 20000; // time with no interaction before it falls asleep
+  let idleTimer = null;
+
+  function sleep(){ launcher.classList.add('nn-sleepy'); }
+  function wake(){
+    launcher.classList.remove('nn-sleepy');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(sleep, IDLE_MS);
+  }
+  ['mousedown','touchstart','keydown','click'].forEach(evt =>
+    document.addEventListener(evt, wake, { passive:true })
+  );
+  wake(); // start the timer on page load
 
   /* ---------- Position the panel next to wherever the button is ---------- */
   function positionPanelNearLauncher(){
@@ -326,6 +409,7 @@ function nnFindAnswer(rawText){
   function sendMessage(){
     const text = input.value.trim();
     if (!text) return;
+    wake();
     addMessage(text, 'user');
     input.value = '';
     showTyping();
