@@ -22,8 +22,9 @@ datasets/*
 .DS_Store
 Thumbs.db
 
-# Node (frontend later)
+# Node
 node_modules/
 dist/
-nestos/
+nestos/node_modules/
+nestos/dist/
 
