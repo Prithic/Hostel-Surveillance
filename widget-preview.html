@@ -275,20 +275,19 @@ const NN_HOSTEL = {
   // Custom facts not covered by the rules dataset (fees, contact, location) —
   // edit these directly.
   faqs: [
-    { keywords:["room","sharing","single","double","triple","occupancy","types","options","bathroom","attached"],
+    { tag:"room_types", label:"Room types", keywords:["room","sharing","single","double","triple","occupancy","types","options","bathroom","attached"],
       answer:"We offer three sharing options, all with an <b>attached bathroom</b>: <b>4-share</b> (₹1.25 lakh/year), <b>3-share</b> (₹1.45 lakh/year), and <b>2-share</b> (₹1.85 lakh/year). All rooms include a bed, study table, chair, and wardrobe." },
-    { keywords:["price","cost","rent","fee","fees","how much","charges"],
+    { tag:"fees", label:"Fees", keywords:["price","cost","rent","fee","fees","how much","charges"],
       answer:"Room fees (per year, attached bathroom included): <b>4-share</b> ₹1.25 lakh, <b>3-share</b> ₹1.45 lakh, <b>2-share</b> ₹1.85 lakh." },
-    { keywords:["warden","contact","phone","email","call","reach","office"],
+    { tag:"warden_contact", label:"Warden contact", keywords:["warden","contact","phone","email","call","reach","office"],
       answer:"You can reach the warden's office at <b>+91 98765 43210</b> or <b>warden@scholarsnest.example</b>, available 8 AM–9 PM daily." },
-    { keywords:["location","address","where","directions","near","distance","college"],
+    { tag:"location", label:"Location", keywords:["location","address","where","directions","near","distance","college"],
       answer:"We're located at <b>21 College Road</b>, a 5-minute walk from the main campus gate and close to auto/bus stands." }
   ],
   greetings:["hi","hello","hey","yo","sup","good morning","good afternoon","good evening","greeting"],
   thanks:["thanks","thank you","thx","cheers","appreciate","goodbye","bye","that's all"],
   bye:["bye","goodbye","see you","later"]
 };
-const NN_CHIPS = ["Room & fees","Mess timings","Curfew","Visitors"];
 
 /* =========================================================
    RULES DATASET — auto-generated from the uploaded CSV
@@ -299,45 +298,50 @@ const NN_CHIPS = ["Room & fees","Mess timings","Curfew","Visitors"];
    Re-run the CSV → JS conversion if you update the dataset.
    ========================================================= */
 const NN_RULES_FAQS = [
-  { tag:"checkin_checkout", keywords:["check", "checkin", "checkout", "out", "timings"],
+  { tag:"checkin_checkout", label:"Check-in / Check-out", keywords:["check", "checkin", "checkout", "out", "timings"],
     answer:"Check-in time is 12:00 PM and check-out time is 11:00 AM. Late check-out may attract an additional charge." },
-  { tag:"curfew", keywords:["close", "curfew", "enter", "entry", "gates", "last", "late", "night"],
+  { tag:"curfew", label:"Curfew", keywords:["close", "curfew", "enter", "entry", "gates", "last", "late", "night"],
     answer:"The hostel gate closes at 10:00 PM on weekdays and 11:00 PM on weekends. Residents must sign in at the security desk if entering after curfew, and repeated late entries require warden approval." },
-  { tag:"visitors", keywords:["come", "family", "friends", "guests", "overnight", "room", "stay", "visit", "visitor", "visitors"],
+  { tag:"visitors", label:"Visitors", keywords:["come", "family", "friends", "guests", "overnight", "room", "stay", "visit", "visitor", "visitors"],
     answer:"Visitors are allowed in the common areas from 9:00 AM to 8:00 PM after registering at the reception. Overnight guests are not permitted without prior written approval from the warden. Visitors are not allowed inside resident rooms." },
-  { tag:"id_card", keywords:["card", "carry", "enter", "id", "lose", "mandatory"],
+  { tag:"id_card", label:"ID card", keywords:["card", "carry", "enter", "id", "lose", "mandatory"],
     answer:"All residents must carry their hostel ID card at all times and present it to security when entering the premises. A lost ID card must be reported immediately and can be reissued for a nominal fee." },
-  { tag:"mess_dining", keywords:["breakfast", "cook", "dining", "dinner", "food", "hall", "mess", "outside", "own", "served", "skip", "timings"],
+  { tag:"mess_dining", label:"Mess timings", keywords:["breakfast", "cook", "dining", "dinner", "food", "hall", "mess", "outside", "own", "served", "skip", "timings"],
     answer:"Mess timings are: Breakfast 7:30\u20139:30 AM, Lunch 12:30\u20132:30 PM, Snacks 5:00\u20136:00 PM, Dinner 7:30\u20139:30 PM. Cooking in rooms is not permitted for safety reasons. Outside food may be consumed in designated common areas only." },
-  { tag:"room_cleanliness", keywords:["cleaning", "cleanliness", "cleans", "inspected", "keep", "messy", "often", "provided", "room", "rooms"],
+  { tag:"room_cleanliness", label:"Room cleanliness", keywords:["cleaning", "cleanliness", "cleans", "inspected", "keep", "messy", "often", "provided", "room", "rooms"],
     answer:"Common areas are cleaned daily by housekeeping staff. Residents are responsible for keeping their own rooms clean and tidy. Rooms are subject to periodic inspection, and residents will be notified in advance." },
-  { tag:"noise", keywords:["hours", "loud", "make", "music", "night", "noise", "play", "quiet", "until"],
+  { tag:"noise", label:"Noise / Quiet hours", keywords:["hours", "loud", "make", "music", "night", "noise", "play", "quiet", "until"],
     answer:"Quiet hours are from 10:00 PM to 6:00 AM. Loud music, shouting, or any disturbance during this period is not allowed out of respect for other residents." },
-  { tag:"alcohol_smoking_drugs", keywords:["alcohol", "drink", "drugs", "room", "smoking"],
+  { tag:"alcohol_smoking_drugs", label:"Alcohol / Smoking / Drugs", keywords:["alcohol", "drink", "drugs", "room", "smoking"],
     answer:"Smoking, alcohol consumption, and drug use are strictly prohibited anywhere on hostel premises. Violation of this rule can lead to immediate expulsion from the hostel." },
-  { tag:"electrical_appliances", keywords:["appliances", "banned", "bring", "electrical", "heater", "iron", "kettle", "own", "room", "rooms", "use"],
+  { tag:"electrical_appliances", label:"Electrical appliances", keywords:["appliances", "banned", "bring", "electrical", "heater", "iron", "kettle", "own", "room", "rooms", "use"],
     answer:"High-wattage appliances such as heaters, induction cooktops, and immersion rods are not allowed in rooms due to fire safety and electrical load concerns. Low-wattage devices like phone chargers, laptops, and table lamps are permitted." },
-  { tag:"laundry", keywords:["available", "clothes", "laundry", "machine", "service", "timings", "wash", "washing"],
+  { tag:"laundry", label:"Laundry", keywords:["available", "clothes", "laundry", "machine", "service", "timings", "wash", "washing"],
     answer:"Laundry facilities are available on each floor from 6:00 AM to 9:00 PM. A laundry service is also available on request for an additional fee; details are available at the reception." },
-  { tag:"payment_fees", keywords:["deposit", "due", "fee", "fees", "late", "pay", "payment", "security"],
+  { tag:"payment_fees", label:"Payment & fees", keywords:["deposit", "due", "fee", "fees", "late", "pay", "payment", "security"],
     answer:"Hostel fees are due within the first 5 days of each month. Payments can be made online or at the accounts office. A late fee applies after the due date, and a refundable security deposit is collected at the time of admission." },
-  { tag:"damage_property", keywords:["broken", "damage", "damages", "fine", "furniture", "pays", "property", "room"],
+  { tag:"damage_property", label:"Property damage", keywords:["broken", "damage", "damages", "fine", "furniture", "pays", "property", "room"],
     answer:"Residents are responsible for any damage to hostel property in their room or shared areas. The cost of repair or replacement will be deducted from the security deposit or billed separately." },
-  { tag:"room_change", keywords:["change", "request", "room", "roommate", "single", "switch"],
+  { tag:"room_change", label:"Room change", keywords:["change", "request", "room", "roommate", "single", "switch"],
     answer:"Room change requests must be submitted in writing to the warden's office and are subject to availability. Approved changes typically take effect within 3\u20135 working days." },
-  { tag:"safety_security", keywords:["case", "cctv", "contact", "emergency", "issues", "measures", "place", "safety", "security"],
+  { tag:"safety_security", label:"Safety & security", keywords:["case", "cctv", "contact", "emergency", "issues", "measures", "place", "safety", "security"],
     answer:"The hostel is monitored by CCTV in common areas and entry points, with security personnel on duty 24/7. In case of emergency, contact the warden or security desk immediately; emergency contact numbers are posted on each floor." },
-  { tag:"leave_outing", keywords:["apply", "go", "home", "leave", "outing", "permission", "semester", "weekend"],
+  { tag:"leave_outing", label:"Leave / Outing", keywords:["apply", "go", "home", "leave", "outing", "permission", "semester", "weekend"],
     answer:"Residents must fill out a leave/outing form at the reception and inform the warden before leaving the premises for more than a day. Local guardian or parent consent may be required for extended leave." },
-  { tag:"ragging_discipline", keywords:["actions", "bullying", "disciplinary", "discipline", "misbehave", "ragging", "tolerated"],
+  { tag:"ragging_discipline", label:"Ragging & discipline", keywords:["actions", "bullying", "disciplinary", "discipline", "misbehave", "ragging", "tolerated"],
     answer:"Ragging, bullying, and any form of harassment are strictly prohibited and will result in immediate disciplinary action, which may include suspension or expulsion. Incidents can be reported confidentially to the warden or anti-ragging committee." },
-  { tag:"pets", keywords:["keep", "pet", "pets"],
+  { tag:"pets", label:"Pets", keywords:["keep", "pet", "pets"],
     answer:"Pets are not allowed in hostel rooms or premises for hygiene and safety reasons." },
-  { tag:"gender_specific_access", keywords:["access", "boys", "enter", "gender", "girls", "separate", "specific"],
+  { tag:"gender_specific_access", label:"Gender-specific access", keywords:["access", "boys", "enter", "gender", "girls", "separate", "specific"],
     answer:"Boys' and girls' hostels are separate, and entry into the opposite-gender hostel is strictly restricted to designated visiting areas during approved visiting hours only." },
-  { tag:"internet_wifi", keywords:["available", "data", "fi", "internet", "limit", "wi", "wifi"],
+  { tag:"internet_wifi", label:"Internet / Wi-Fi", keywords:["available", "data", "fi", "internet", "limit", "wi", "wifi"],
     answer:"Wi-Fi is available in all rooms and common areas. Fair usage policy applies, and accessing illegal or restricted content over the network is prohibited." },
 ];
+
+// All topics in one flat list, used to render the clickable tag chips below.
+// Chips show the rule-dataset tags first, followed by the hostel's own
+// custom facts (room types, fees, warden contact, location).
+const NN_ALL_TOPICS = [...NN_RULES_FAQS, ...NN_HOSTEL.faqs];
 
 const NN_STOPWORDS = new Set("a an the is are am was were be been being do does did i my me you your in on at to of for if can could should would will shall must have has had what when where who why how there here this that these those it its any allowed need needed permit permitted policy rule rules time times get got about with without into from as or and but not no yes so please tell during after before happen happens hostel".split(" "));
 
@@ -419,7 +423,7 @@ function nnFindAnswer(rawText){
     if (score > bestScore) { bestScore = score; best = faq; }
   }
   if (best && bestScore > 0) return best.answer;
-  return "I don't have that one on file — but the warden's office can help directly. Try asking about rooms, fees, mess timings, curfew, visitors, or any hostel rule!";
+  return "Sorry, I don't know about that — please ask the hostel warden for help with this.";
 }
 
 // Rolling short-term memory sent to the AI so it can follow up on context.
@@ -641,11 +645,20 @@ async function nnGetAnswer(rawText){
   function addChips(){
     const wrap = document.createElement('div');
     wrap.className = 'nn-chips';
-    NN_CHIPS.forEach(label => {
+    NN_ALL_TOPICS.forEach(topic => {
       const chip = document.createElement('button');
       chip.className = 'nn-chip';
-      chip.textContent = label;
-      chip.onclick = () => { input.value = label; sendMessage(); };
+      chip.textContent = topic.label;
+      chip.onclick = () => {
+        wake();
+        addMessage(topic.label, 'user');
+        nnSfx.send();
+        showTyping();
+        setTimeout(() => {
+          hideTyping();
+          addMessage(topic.answer, 'bot');
+        }, 260); // tiny delay so it still feels like a reply, not an instant swap
+      };
       wrap.appendChild(chip);
     });
     body.appendChild(wrap);
