@@ -37,6 +37,7 @@ class IncidentType(str, Enum):
     RESTRICTED_ZONE_ENTRY = "restricted_zone_entry"
     UNAUTHORIZED_NIGHT_MOVEMENT = "unauthorized_night_movement"
     CROWD_DETECTION = "crowd_detection"
+    TAILGATING = "tailgating"
     # Future: CAMERA_TAMPERING, FIRE, SMOKE
 
 
@@ -75,6 +76,7 @@ class RuleContext:
         config: Pipeline thresholds and schedules.
         frame_index: Monotonic frame counter from the video source.
         timestamp: Wall-clock (or video) time for this frame.
+        camera_id: Source camera id for multi-cam incidents.
     """
 
     tracks: Sequence[Track]
@@ -82,6 +84,7 @@ class RuleContext:
     config: AIConfig
     frame_index: int
     timestamp: datetime
+    camera_id: str = "webcam-0"
 
 
 class Rule(ABC):

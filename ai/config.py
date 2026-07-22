@@ -24,6 +24,7 @@ class AIConfig:
         crowd_threshold: Person count that triggers a crowd incident.
         zones_path: Optional JSON/YAML describing restricted polygons.
         device: Inference device hint (``cpu``, ``cuda``, ``0``, …).
+        camera_id: Stable camera identifier attached to incidents/alerts.
     """
 
     source: str | int = 0
@@ -35,6 +36,7 @@ class AIConfig:
     crowd_threshold: int = 5
     zones_path: Path | None = None
     device: str = "cpu"
+    camera_id: str = "webcam-0"
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.confidence_threshold <= 1.0:
