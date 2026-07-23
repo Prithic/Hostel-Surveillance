@@ -23,11 +23,17 @@ class PolygonZoneManager(ZoneManager):
         self._zones: dict[str, Zone] = {z.zone_id: z for z in (zones or ())}
 
     @classmethod
-    def from_json(cls, path: str | Path) -> PolygonZoneManager:
+    def from_json(cls, path: str | Path, frame_size: tuple[int, int] | None = None) -> PolygonZoneManager:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
+        ref_w = float(data.get("reference_width", 640))
+        ref_h = float(data.get("reference_height", 480))
+        fw, fh = (float(frame_size[0]), float(frame_size[1])) if frame_size else (ref_w, ref_h)
+        sx, sy = fw / ref_w, fh / ref_h
         zones: list[Zone] = []
         for item in data.get("zones", []):
-            poly = tuple(Point(float(x), float(y)) for x, y in item["polygon"])
+            poly = tuple(
+                Point(float(x) * sx, float(y) * sy) for x, y in item["polygon"]
+            )
             zones.append(
                 Zone(
                     zone_id=str(item["zone_id"]),

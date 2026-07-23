@@ -37,13 +37,45 @@ class IncidentEngine:
     Crowd/night keys ignore volatile track sets and use type+camera only.
     """
 
-    def __init__(self, cooldown_seconds: float = 8.0) -> None:
+    def __init__(self, cooldown_seconds: float = 8.0, store=None) -> None:
         self._cooldown = timedelta(seconds=cooldown_seconds)
         self._seq = itertools.count(1)
         self._lock = threading.Lock()
         self._active: dict[str, StoredIncident] = {}
         self._by_key: dict[tuple, str] = {}
         self._history: list[StoredIncident] = []
+        self._store = store
+        if store is not None:
+            self._hydrate(store)
+
+    def _hydrate(self, store) -> None:
+        loaded = list(reversed(store.load_all(limit=500)))
+        self._history = loaded
+        max_n = 0
+        for inc in loaded:
+            self._active[inc.id] = inc
+            if inc.id.startswith("INC-"):
+                try:
+                    max_n = max(max_n, int(inc.id.split("-")[1]))
+                except ValueError:
+                    pass
+            key = (
+                inc.camera_id,
+                inc.incident_type,
+                tuple(inc.zone_ids),
+                tuple(sorted(inc.track_ids)),
+            )
+            if inc.incident_type in (
+                IncidentType.CROWD_DETECTION.value,
+                IncidentType.UNAUTHORIZED_NIGHT_MOVEMENT.value,
+            ):
+                key = (inc.camera_id, inc.incident_type)
+            self._by_key[key] = inc.id
+        self._seq = itertools.count(max_n + 1)
+
+    def _persist(self, inc: StoredIncident) -> None:
+        if self._store is not None:
+            self._store.upsert(inc)
 
     def _key(self, camera_id: str, incident: Incident) -> tuple:
         itype = incident.incident_type
@@ -72,6 +104,7 @@ class IncidentEngine:
                     stored.reason = inc.reason
                     stored.track_ids = list(inc.track_ids)
                     # cooldown elapsed → re-emit as update
+                    self._persist(stored)
                     emitted.append(stored)
                     continue
 
@@ -95,6 +128,7 @@ class IncidentEngine:
                 self._history.append(stored)
                 if len(self._history) > 1000:
                     self._history.pop(0)
+                self._persist(stored)
                 emitted.append(stored)
         return emitted
 
@@ -118,4 +152,5 @@ class IncidentEngine:
                         return True
                 return False
             inc.status = "resolved"
+            self._persist(inc)
             return True

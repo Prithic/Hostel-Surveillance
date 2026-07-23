@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Menu, Bell, CheckCircle2, Shirt, Megaphone, MessageSquareWarning, Search, Settings, LogOut, ChevronDown } from 'lucide-react'
+import { Menu, Bell, CheckCircle2, Shirt, Megaphone, MessageSquareWarning, Search, Settings, LogOut, ChevronDown, FileClock } from 'lucide-react'
 import { currentUser } from '../data/dummyData'
+
+import NotificationCenterModal from './NotificationCenterModal'
 
 const alerts = [
   { icon: CheckCircle2, tone: 'text-success', text: 'Leave request approved', time: '2h ago' },
@@ -11,8 +13,8 @@ const alerts = [
   { icon: Megaphone, tone: 'text-danger', text: 'New notice: Water shutdown tomorrow', time: '1d ago' },
 ]
 
-export default function Topbar({ onToggleSidebar, title, isLive }) {
-  const [open, setOpen] = useState(false)
+export default function Topbar({ onToggleSidebar, title }) {
+  const [notifOpen, setNotifOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const navigate = useNavigate()
   const initials = currentUser.name.split(' ').map((n) => n[0]).join('')
@@ -25,56 +27,42 @@ export default function Topbar({ onToggleSidebar, title, isLive }) {
             <Menu className="h-5 w-5" />
           </button>
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="font-display truncate text-base font-semibold text-white md:text-lg">{title}</h1>
-              {isLive
-                ? <span className="hidden sm:inline-flex items-center rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-semibold text-success">● LIVE</span>
-                : <span className="hidden sm:inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/40">DEMO</span>
-              }
-            </div>
+            <h1 className="font-display truncate text-base font-semibold text-white md:text-lg">{title}</h1>
             <p className="hidden text-xs text-white/45 sm:block">Welcome back, {currentUser.name.split(' ')[0]} · Room {currentUser.room}</p>
           </div>
         </div>
 
-        <div className="hidden flex-1 max-w-xs items-center gap-2 rounded-2xl liquid-input px-3.5 py-2 lg:flex">
-          <Search className="h-4 w-4 shrink-0 text-white/45" />
-          <input
-            placeholder="Search GuardianAI…"
-            className="w-full bg-transparent text-sm text-white placeholder:text-white/45 outline-none"
-          />
-        </div>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
+          className="hidden flex-1 max-w-xs items-center justify-between gap-2 rounded-2xl liquid-input px-3.5 py-2 text-left lg:flex transition hover:bg-white/15"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <Search className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate text-sm text-white/50">Search students, complaints, rooms...</span>
+          </div>
+          <kbd className="shrink-0 rounded bg-white/10 px-2 py-0.5 font-mono text-[10px] text-white/70">
+            Ctrl K
+          </kbd>
+        </button>
 
         <div className="flex items-center gap-2">
+          {/* Prominent Outpass Quick Button */}
+          <button
+            onClick={() => navigate('/leave')}
+            className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-primary via-blue-600 to-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-liquid transition hover:opacity-95 shrink-0"
+          >
+            <FileClock className="h-4 w-4 animate-pulse text-amber-300" />
+            {['Admin', 'Super Admin', 'Chief Warden', 'Warden'].includes(currentUser?.role) ? 'Warden Outpass Desk' : 'Request Outpass'}
+          </button>
           <div className="relative">
             <button
-              onClick={() => { setOpen((v) => !v); setProfileOpen(false) }}
+              onClick={() => { setNotifOpen(true); setProfileOpen(false) }}
               className="relative rounded-2xl p-2.5 text-white/55 transition hover:bg-white/10 hover:text-white"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-danger shadow-[0_0_0_2px_rgba(255,255,255,0.9)]" />
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-danger shadow-[0_0_0_2px_rgba(255,255,255,0.9)] animate-pulse" />
             </button>
-            <AnimatePresence>
-              {open && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                  transition={{ duration: 0.18 }}
-                  className="liquid-glass absolute right-0 mt-2 w-80 rounded-3xl p-2"
-                >
-                  <p className="px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-white/45">Recent alerts</p>
-                  {alerts.map((a, i) => (
-                    <div key={i} className="flex items-start gap-3 rounded-2xl px-3 py-2 transition hover:bg-white/10">
-                      <a.icon className={`mt-0.5 h-4 w-4 ${a.tone}`} />
-                      <div>
-                        <p className="text-sm text-white">{a.text}</p>
-                        <p className="text-xs text-white/45">{a.time}</p>
-                      </div>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <NotificationCenterModal open={notifOpen} onClose={() => setNotifOpen(false)} />
           </div>
 
           <div className="relative">

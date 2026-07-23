@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   LayoutDashboard, DoorOpen, CalendarCheck, FileClock, Megaphone, Wallet,
   MessageSquareWarning, Utensils, Shirt, Search, UserCheck, Siren,
-  ClipboardList, Boxes, BarChart3, Settings, LogOut, Building2, X,
+  ClipboardList, Boxes, BarChart3, Settings, LogOut, Building2, X, ShieldCheck,
 } from 'lucide-react'
 
 const nav = [
@@ -22,6 +22,7 @@ const nav = [
   { to: '/inspection', label: 'Room Inspection', icon: ClipboardList },
   { to: '/inventory', label: 'Inventory', icon: Boxes },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/security', label: 'Security (GuardianAI)', icon: ShieldCheck },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -53,7 +54,7 @@ export default function MobileDrawer({ open, onClose }) {
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl liquid-tint-primary text-white">
                     <Building2 className="h-4 w-4" />
                   </div>
-                  <span className="font-display text-lg font-bold text-white">NestOS</span>
+                  <span className="font-display text-base font-extrabold text-white">Trinity Engine</span>
                 </div>
                 <button onClick={onClose} className="rounded-full p-1.5 text-white/55 hover:bg-white/10">
                   <X className="h-4 w-4" />
@@ -80,7 +81,12 @@ export default function MobileDrawer({ open, onClose }) {
               </nav>
 
               <button
-                onClick={() => { onClose(); navigate('/') }}
+                onClick={() => {
+                  onClose()
+                  localStorage.removeItem('nestos_user')
+                  localStorage.removeItem('nestos_jwt_token')
+                  navigate('/')
+                }}
                 className="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm text-white/55 hover:bg-danger/10 hover:text-danger"
               >
                 <LogOut className="h-4 w-4" strokeWidth={1.75} />

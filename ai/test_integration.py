@@ -21,11 +21,10 @@ def test_ai_modules():
 
     # Polygon zone tests
     z = Zone(zone_id="z1", name="Test Zone", polygon=(Point(0, 0), Point(100, 0), Point(100, 100), Point(0, 100)))
-    assert z.contains(Point(50, 50)) is True, "Point inside polygon check failed"
-    assert z.contains(Point(150, 150)) is False, "Point outside polygon check failed"
-
     p_mgr = PolygonZoneManager([z])
     assert len(list(p_mgr.zones())) == 1
+    assert p_mgr.contains(Point(50, 50), "z1") is True, "Point inside polygon check failed"
+    assert p_mgr.contains(Point(150, 150), "z1") is False, "Point outside polygon check failed"
 
     # Rule engine edge case: zero tracks
     engine = SimpleRuleEngine(default_rules())
@@ -59,16 +58,32 @@ def test_ai_modules():
 
 
 def test_chat_reply():
-    print("Testing Chatbot reply logic...", end=" ")
-    # Import only the pure function, not the hub (which needs an event loop)
+    print("Testing Chatbot reply logic & incident resolution...", end=" ")
     from ai.incidents import IncidentEngine
     from ai.alerts import AlertEngine
+    from ai.rules import Incident, IncidentType, Severity
 
     # Verify the engines respond correctly on empty state
     ie = IncidentEngine()
     ae = AlertEngine()
     assert ie.list_incidents() == []
     assert ae.recent() == []
+
+    # Test incident resolution logic
+    raw = Incident(
+        incident_type=IncidentType.RESTRICTED_ZONE_ENTRY,
+        severity=Severity.HIGH,
+        reason="Test intrusion",
+        track_ids=(1,),
+        zone_ids=("z1",),
+        metadata={"camera_id": "cam-test"},
+    )
+    stored = ie.ingest("cam-test", [raw])
+    assert stored[0].status == "open"
+    res_ok = ie.resolve(stored[0].id)
+    assert res_ok is True
+    assert stored[0].status == "resolved"
+    assert ie.resolve("NON_EXISTENT_ID") is False
     print("SUCCESS")
 
 

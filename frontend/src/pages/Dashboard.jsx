@@ -1,14 +1,17 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts'
 import {
   CalendarCheck, DoorOpen, MessageSquareWarning, Wallet, Utensils, Shirt,
   FileClock, Siren, Megaphone, Phone, Search, CheckCircle2, Circle,
-  IndianRupee, ArrowUpRight,
+  IndianRupee, ArrowUpRight, Download, Sparkles, Edit3, ShieldAlert,
 } from 'lucide-react'
 import StatCard from '../components/StatCard'
 import GlassCard from '../components/GlassCard'
 import Badge from '../components/Badge'
+import AdminEditModal from '../components/AdminEditModal'
+import { exportToCSV } from '../utils/exportCSV'
 import {
   statSummary, notices, events, complaints, attendanceTrend,
   roomInfo, roommates, feeStatus, todayMenu, mealTimings,
@@ -34,6 +37,8 @@ const menuRows = [
   { label: 'Dinner', value: todayMenu.dinner, time: mealTimings.dinner },
 ]
 
+import { useRoleCheck } from '../hooks/useRoleCheck'
+
 const container = {
   hidden: {},
   show: { transition: { staggerChildren: 0.06 } },
@@ -45,6 +50,8 @@ const item = {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { isAdminRole } = useRoleCheck()
+  const [adminEditOpen, setAdminEditOpen] = useState(false)
   const currentLaundryIdx = laundrySteps.indexOf(laundryTracking[0]?.status)
   const feePct = Math.round((feeStatus.paid / (feeStatus.paid + feeStatus.pending || 1)) * 100)
 
@@ -52,18 +59,57 @@ export default function Dashboard() {
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       {/* Stats */}
       <motion.div variants={item} className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-        <StatCard icon={CalendarCheck} label="Attendance" value={`${statSummary.attendance}%`} tone="success" />
-        <StatCard icon={DoorOpen} label="Room Number" value={statSummary.room} tone="primary" />
-        <StatCard icon={MessageSquareWarning} label="Pending Complaints" value={statSummary.pendingComplaints} tone="warning" />
-        <StatCard icon={Wallet} label="Fee Status" value={statSummary.feeStatus} tone="success" />
-        <StatCard icon={Utensils} label="Today's Menu" value={statSummary.todayMenu} tone="primary" />
-        <StatCard icon={Shirt} label="Laundry Status" value={statSummary.laundryStatus} tone="warning" />
+        <div onClick={() => navigate('/attendance')} className="cursor-pointer transition hover:scale-[1.02]">
+          <StatCard icon={CalendarCheck} label="Attendance" value={`${statSummary.attendance}%`} tone="success" />
+        </div>
+        <div onClick={() => navigate('/room-details')} className="cursor-pointer transition hover:scale-[1.02]">
+          <StatCard icon={DoorOpen} label="Room Number" value={statSummary.room} tone="primary" />
+        </div>
+        <div onClick={() => navigate('/complaints')} className="cursor-pointer transition hover:scale-[1.02]">
+          <StatCard icon={MessageSquareWarning} label="Pending Complaints" value={statSummary.pendingComplaints} tone="warning" />
+        </div>
+        <div onClick={() => navigate('/fees')} className="cursor-pointer transition hover:scale-[1.02]">
+          <StatCard icon={Wallet} label="Fee Status" value={statSummary.feeStatus} tone="success" />
+        </div>
+        <div onClick={() => navigate('/mess')} className="cursor-pointer transition hover:scale-[1.02]">
+          <StatCard icon={Utensils} label="Today's Menu" value={statSummary.todayMenu} tone="primary" />
+        </div>
+        <div onClick={() => navigate('/laundry')} className="cursor-pointer transition hover:scale-[1.02]">
+          <StatCard icon={Shirt} label="Laundry Status" value={statSummary.laundryStatus} tone="warning" />
+        </div>
       </motion.div>
 
       {/* Quick actions */}
       <motion.div variants={item}>
         <GlassCard className="p-5" hover={false}>
-          <h2 className="mb-4 font-display text-sm font-semibold text-white">Quick actions</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-display text-sm font-semibold text-white">Quick actions</h2>
+            <div className="flex items-center gap-2">
+              {isAdminRole && (
+                <button
+                  onClick={() => setAdminEditOpen(true)}
+                  className="flex items-center gap-1.5 rounded-xl bg-amber-500/20 border border-amber-500/30 px-3 py-1.5 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/30"
+                >
+                  <Edit3 className="h-3.5 w-3.5" /> Admin Master Edit
+                </button>
+              )}
+              <button
+                onClick={() =>
+                  exportToCSV('trinity_dashboard_summary', [
+                    { Metric: 'Attendance', Value: `${statSummary.attendance}%` },
+                    { Metric: 'Room', Value: statSummary.room },
+                    { Metric: 'Pending Complaints', Value: statSummary.pendingComplaints },
+                    { Metric: 'Fee Status', Value: statSummary.feeStatus },
+                    { Metric: 'Today Menu', Value: statSummary.todayMenu },
+                    { Metric: 'Laundry Status', Value: statSummary.laundryStatus },
+                  ])
+                }
+                className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/10"
+              >
+                <Download className="h-3.5 w-3.5 text-primary" /> Export Summary CSV
+              </button>
+            </div>
+          </div>
           <div className="flex flex-wrap gap-3">
             {quickActions.map(({ label, icon: Icon, path, tone }) => (
               <motion.button
@@ -85,7 +131,7 @@ export default function Dashboard() {
         {/* Attendance graph */}
         <GlassCard className="p-5 lg:col-span-2" hover={false}>
           <h2 className="mb-1 font-display text-sm font-semibold text-white">Attendance this week</h2>
-          <p className="mb-4 text-xs text-white/45">Auto-logged via face recognition & QR check-in</p>
+          <p className="mb-4 text-xs text-white/45">Attendance logged via hostel check-in (QR / manual) — no facial recognition.</p>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={attendanceTrend}>
@@ -315,6 +361,8 @@ export default function Dashboard() {
           </GlassCard>
         </div>
       </motion.div>
+
+      <AdminEditModal open={adminEditOpen} onClose={() => setAdminEditOpen(false)} />
     </motion.div>
   )
 }

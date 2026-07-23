@@ -2,8 +2,9 @@
 
 Place production weights here:
 
-- `yolov8s_v4_production.pt` — extracted from `YOLOv8s_v4_production_*.zip` at repo root
+- `yolov8s_v4_production.pt` (preferred)
+- Fallback used by backend if missing: `models/yolov8n.pt`
 
-Weights are gitignored (`*.pt`). Keep the zip or restore from team storage.
+Weights are **gitignored** (`*.pt`). Obtain from the team / training run — do not commit `.pt` files.
 
-Class 0 is named `item` in the checkpoint; dataset prep maps it to YOLO class `person`.
+Class `0` may be named `item` in custom checkpoints; runtime treats it as person detection for the hostel pipeline.

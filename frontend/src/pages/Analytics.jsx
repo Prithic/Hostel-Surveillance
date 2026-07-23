@@ -1,9 +1,6 @@
-import { useEffect, useState } from 'react'
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import GlassCard from '../components/GlassCard'
-
-const API = import.meta.env.VITE_API_URL || ''
-const COLORS = ['#EF4444', '#F59E0B', '#3B82F6', '#10B981']
+import { analytics } from '../data/dummyData'
 
 function ChartCard({ title, children }) {
   return (
@@ -15,65 +12,39 @@ function ChartCard({ title, children }) {
 }
 
 export default function Analytics() {
-  const [data, setData] = useState(null)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    async function fetchAnalytics() {
-      try {
-        const res = await fetch(`${API}/api/analytics`)
-        if (!res.ok) throw new Error('Failed to load analytics')
-        const json = await res.json()
-        setData(json)
-        setError('')
-      } catch (err) {
-        setError('Backend offline — live analytics unavailable')
-      }
-    }
-    fetchAnalytics()
-    const timer = setInterval(fetchAnalytics, 3000)
-    return () => clearInterval(timer)
-  }, [])
-
-  const severityChartData = data ? [
-    { name: 'Critical', value: data.incidents_by_severity?.critical || 0 },
-    { name: 'High', value: data.incidents_by_severity?.high || 0 },
-    { name: 'Medium', value: data.incidents_by_severity?.medium || 0 },
-    { name: 'Low', value: data.incidents_by_severity?.low || 0 },
-  ] : []
-
-  const typeChartData = data ? Object.entries(data.incidents_by_type || {}).map(([key, count]) => ({
-    type: key.replace('_', ' '),
-    count: count,
-  })) : []
-
   return (
-    <div className="space-y-6">
-      {error && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">{error}</div>
-      )}
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <ChartCard title="Attendance trend">
+        <LineChart data={analytics.attendance}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+          <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.45)' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} /><YAxis tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.45)' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} /><Tooltip contentStyle={{ background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: '#fff' }} labelStyle={{ color: 'rgba(255,255,255,0.6)' }} itemStyle={{ color: '#fff' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+          <Line type="monotone" dataKey="value" stroke="#2563EB" strokeWidth={2} dot={false} />
+        </LineChart>
+      </ChartCard>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ChartCard title="Security Incidents by Severity">
-          <PieChart>
-            <Pie data={severityChartData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={4}>
-              {severityChartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-            </Pie>
-            <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: '#fff' }} />
-            <Legend wrapperStyle={{ color: 'rgba(255,255,255,0.7)', fontSize: 12 }} />
-          </PieChart>
-        </ChartCard>
+      <ChartCard title="Complaint trends">
+        <BarChart data={analytics.complaintsTrend}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+          <XAxis dataKey="month" tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.45)' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} /><YAxis tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.45)' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} /><Tooltip contentStyle={{ background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: '#fff' }} labelStyle={{ color: 'rgba(255,255,255,0.6)' }} itemStyle={{ color: '#fff' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+          <Bar dataKey="count" fill="#F59E0B" radius={[6, 6, 0, 0]} />
+        </BarChart>
+      </ChartCard>
 
-        <ChartCard title="Live Incident Distribution by Event Type">
-          <BarChart data={typeChartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-            <XAxis dataKey="type" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} />
-            <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: '#fff' }} />
-            <Bar dataKey="count" fill="#2563EB" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ChartCard>
-      </div>
+      <ChartCard title="Mess ratings (weekly)">
+        <LineChart data={analytics.messRatings}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+          <XAxis dataKey="day" tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.45)' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} /><YAxis domain={[0, 5]} tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.45)' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} /><Tooltip contentStyle={{ background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: '#fff' }} labelStyle={{ color: 'rgba(255,255,255,0.6)' }} itemStyle={{ color: '#fff' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+          <Line type="monotone" dataKey="rating" stroke="#22C55E" strokeWidth={2} dot={false} />
+        </LineChart>
+      </ChartCard>
+
+      <ChartCard title="Laundry usage (weekly bookings)">
+        <BarChart data={[{d:'Mon',v:22},{d:'Tue',v:18},{d:'Wed',v:26},{d:'Thu',v:20},{d:'Fri',v:30},{d:'Sat',v:34},{d:'Sun',v:16}]}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+          <XAxis dataKey="d" tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.45)' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} /><YAxis tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.45)' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} /><Tooltip contentStyle={{ background: 'rgba(15,23,42,0.92)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: '#fff' }} labelStyle={{ color: 'rgba(255,255,255,0.6)' }} itemStyle={{ color: '#fff' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+          <Bar dataKey="v" fill="#2563EB" radius={[6, 6, 0, 0]} />
+        </BarChart>
+      </ChartCard>
     </div>
   )
 }

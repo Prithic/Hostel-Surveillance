@@ -8,6 +8,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Sequence
 
+import cv2
+import numpy as np
+
 from ai.alerts import AlertEngine
 from ai.bytetrack import ByteTrackTracker
 from ai.config import AIConfig
@@ -22,7 +25,6 @@ from ai.zone import Point, Zone, ZoneManager
 
 
 def _default_zones() -> ZoneManager:
-    """Demo restricted rectangle (top-right quadrant @ 640x480)."""
     return PolygonZoneManager(
         [
             Zone(
@@ -70,8 +72,11 @@ class GuardianPipeline:
 
     def __post_init__(self) -> None:
         self.status = PipelineStatus(camera_id=self.config.camera_id)
-        if self.config.zones_path and Path(self.config.zones_path).is_file():
-            self.zones = PolygonZoneManager.from_json(self.config.zones_path)
+        self._zones_path = (
+            Path(self.config.zones_path)
+            if self.config.zones_path and Path(self.config.zones_path).is_file()
+            else None
+        )
         model = str(self.config.model_path)
         if not Path(model).is_file():
             model = Path(model).name
@@ -86,6 +91,7 @@ class GuardianPipeline:
         self._prev_t = time.perf_counter()
         self._fps = 0.0
         self._frame_index = 0
+        self._zones_scaled = False
 
     def open(self) -> None:
         self._stream = OpenCVVideoStream(self.config.source)
@@ -99,7 +105,48 @@ class GuardianPipeline:
         self._tracker.close()
         self.status.online = False
 
+    def _ensure_zones(self, frame: Frame) -> None:
+        if self._zones_scaled or self._zones_path is None:
+            return
+        h, w = frame.shape[:2]
+        self.zones = PolygonZoneManager.from_json(self._zones_path, frame_size=(w, h))
+        self._zones_scaled = True
+
+    def annotate(self, frame: Frame, tracks: Sequence[Track]) -> Frame:
+        """Copy frame with zones + track boxes for the warden live view."""
+        out = frame.copy()
+        for z in self.zones.zones():
+            pts = np.array([[int(p.x), int(p.y)] for p in z.polygon], dtype=np.int32)
+            color = (0, 0, 220) if z.restricted else (200, 200, 0)
+            cv2.polylines(out, [pts], True, color, 2)
+            x0, y0 = int(z.polygon[0].x), int(z.polygon[0].y)
+            cv2.putText(out, z.name, (x0, max(16, y0 - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
+        for track in tracks:
+            b = track.detection.bbox
+            x1, y1, x2, y2 = int(b.x1), int(b.y1), int(b.x2), int(b.y2)
+            cv2.rectangle(out, (x1, y1), (x2, y2), (0, 200, 80), 2)
+            cv2.putText(
+                out,
+                f"ID {track.track_id} {track.detection.confidence:.2f}",
+                (x1, max(20, y1 - 8)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 200, 80),
+                1,
+            )
+        cv2.putText(
+            out,
+            f"FPS {self._fps:.1f}  people={len(tracks)}",
+            (10, 24),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.65,
+            (40, 40, 255),
+            2,
+        )
+        return out
+
     def process_frame(self, frame: Frame) -> FrameResult:
+        self._ensure_zones(frame)
         tracks = list(self._tracker.update((), frame))
         now = datetime.now(timezone.utc)
         ctx = RuleContext(

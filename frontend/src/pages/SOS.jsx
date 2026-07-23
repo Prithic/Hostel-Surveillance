@@ -71,8 +71,8 @@ export default function SOS() {
           <MapPin className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-sm font-medium text-white">Location sharing on SOS</p>
-          <p className="text-xs text-white/45">Warden is notified with your registered room. Precise GPS requires device permission.</p>
+          <p className="text-sm font-medium text-white">Live location shared on SOS</p>
+          <p className="text-xs text-white/45">Block B, Room 204 — Green Valley Hostel Campus</p>
         </div>
       </GlassCard>
     </div>

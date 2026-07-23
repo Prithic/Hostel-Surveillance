@@ -1,0 +1,65 @@
+<!-- Launcher: draggable wrapper (position) + button (visuals/float/hover) -->
+<div id="nn-chat-launcher-wrap">
+  <span class="nn-sleep-aura"></span>
+  <span class="nn-pulse-ring"></span>
+  <span class="nn-pulse-ring nn-ring2"></span>
+  <button id="nn-chat-launcher" aria-label="Open chat" title="Drag me anywhere · Double-click to wiggle">
+  <svg viewBox="0 0 24 26" fill="none">
+    <g class="nn-bot-antenna">
+      <line x1="12" y1="6" x2="12" y2="3" stroke="#F5EFE4" stroke-width="1.6" stroke-linecap="round"></line>
+      <circle class="nn-bot-antenna-tip" cx="12" cy="2.4" r="1.5" fill="#E3A23C"></circle>
+    </g>
+    <rect x="1.5" y="11.5" width="2.6" height="5" rx="1.3" fill="#E3A23C"></rect>
+    <rect x="19.9" y="11.5" width="2.6" height="5" rx="1.3" fill="#E3A23C"></rect>
+    <rect x="4" y="7.5" width="16" height="14" rx="6" fill="none" stroke="#F5EFE4" stroke-width="1.6"></rect>
+    <rect x="6.3" y="10.5" width="11.4" height="8" rx="4" fill="#0F1F2B"></rect>
+
+    <g class="nn-face-awake">
+      <g class="nn-bot-eyes-track">
+        <ellipse class="nn-bot-eye nn-left" cx="9.7" cy="14.5" rx="1.15" ry="1.5" fill="#7FE0C9"></ellipse>
+        <ellipse class="nn-bot-eye nn-right" cx="14.3" cy="14.5" rx="1.15" ry="1.5" fill="#7FE0C9"></ellipse>
+      </g>
+      <path d="M9.8 16.9c.9.75 3.5.75 4.4 0" stroke="#7FE0C9" stroke-width="1.1" stroke-linecap="round" fill="none"></path>
+    </g>
+
+    <g class="nn-face-sleepy">
+      <path d="M8.6 14.5c.6-.6 1.8-.6 2.4 0" stroke="#7FE0C9" stroke-width="1.1" stroke-linecap="round" fill="none"></path>
+      <path d="M13.2 14.5c.6-.6 1.8-.6 2.4 0" stroke="#7FE0C9" stroke-width="1.1" stroke-linecap="round" fill="none"></path>
+      <path d="M10.4 17.1c.5.4 1.9.4 2.4 0" stroke="#7FE0C9" stroke-width="1" stroke-linecap="round" fill="none"></path>
+    </g>
+
+    <g class="nn-face-dizzy">
+      <path d="M8.7 13.6l1.7 1.7M10.4 13.6l-1.7 1.7" stroke="#7FE0C9" stroke-width="1" stroke-linecap="round"></path>
+      <path d="M13.4 13.6l1.7 1.7M15.1 13.6l-1.7 1.7" stroke="#7FE0C9" stroke-width="1" stroke-linecap="round"></path>
+      <ellipse cx="12" cy="17" rx="1.1" ry="0.8" stroke="#7FE0C9" stroke-width="1" fill="none"></ellipse>
+    </g>
+  </svg>
+  <span class="nn-zzz nn-z1">z</span>
+  <span class="nn-zzz nn-z2">z</span>
+  <span class="nn-zzz nn-z3">z</span>
+  <span class="nn-dot"></span>
+  </button>
+</div>
+
+<!-- Chat panel -->
+<div id="nn-chat-panel">
+  <div id="nn-chat-header">
+    <div>
+      <span class="nn-tag">Trinity Assistant</span>
+      <h2>Trinity Engine</h2>
+    </div>
+    <div style="display:flex; align-items:center; gap:4px;">
+      <button id="nn-sound-toggle" aria-label="Toggle sound" style="background:none; border:none; color:#F5EFE4; opacity:.7; cursor:pointer; font-size:16px; line-height:1; padding:4px;">🔊</button>
+      <button id="nn-chat-close" aria-label="Close chat">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+  <div id="nn-chat-body"></div>
+  <div id="nn-chat-input-row">
+    <input id="nn-chat-input" type="text" placeholder="Ask about rooms, fees, mess timings…" autocomplete="off">
+    <button id="nn-chat-send" aria-label="Send">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+    </button>
+  </div>
+</div>

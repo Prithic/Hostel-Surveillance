@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import {
   LayoutDashboard, DoorOpen, CalendarCheck, FileClock, Megaphone, Wallet,
   MessageSquareWarning, Utensils, Shirt, Search, UserCheck, Siren,
-  ClipboardList, Boxes, BarChart3, Settings, LogOut, Building2, ShieldCheck, Bot,
+  ClipboardList, Boxes, BarChart3, Settings, LogOut, Building2, ShieldCheck,
 } from 'lucide-react'
 
 const nav = [
@@ -21,8 +21,8 @@ const nav = [
   { to: '/sos', label: 'Emergency SOS', icon: Siren },
   { to: '/inspection', label: 'Room Inspection', icon: ClipboardList },
   { to: '/inventory', label: 'Inventory', icon: Boxes },
-  { to: '/analytics', label: 'AI Analytics', icon: BarChart3 },
-  { to: '/chatbot', label: 'AI Assistant', icon: Bot },
+  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/security', label: 'Security (GuardianAI)', icon: ShieldCheck },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -47,8 +47,8 @@ export default function Sidebar({ open, onNavigate }) {
               <Building2 className="h-4 w-4" />
             </motion.div>
             <div>
-              <span className="font-display block text-lg font-bold leading-none tracking-tight text-white">GuardianAI</span>
-              <span className="text-[11px] font-medium text-white/45">Security Platform</span>
+              <span className="font-display block text-base font-extrabold leading-none tracking-tight text-white">Trinity Engine</span>
+              <span className="text-[10px] font-medium text-white/45 uppercase tracking-wider">Smart Hostel OS</span>
             </div>
           </div>
         </div>
@@ -91,7 +91,11 @@ export default function Sidebar({ open, onNavigate }) {
             Admin access
           </button>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => {
+              localStorage.removeItem('nestos_user')
+              localStorage.removeItem('nestos_jwt_token')
+              navigate('/')
+            }}
             className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm text-white/55 transition-colors hover:bg-danger/10 hover:text-danger"
           >
             <LogOut className="h-4 w-4" strokeWidth={1.75} />

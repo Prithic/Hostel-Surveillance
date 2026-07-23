@@ -1,23 +1,8 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import {
-  MessageSquareWarning, Shirt, Utensils, CalendarCheck, UserCheck,
-  Siren, ClipboardList, ShieldCheck, ArrowRight, Building2,
-} from 'lucide-react'
+import { ArrowRight, Building2, ShieldCheck, CheckCircle2, Users, ShieldAlert, Sparkles } from 'lucide-react'
 import AnimatedBackground from '../components/AnimatedBackground'
 import LiquidNav from '../components/LiquidNav'
-
-const features = [
-  { icon: ShieldCheck, title: 'AI Security Monitoring', desc: 'Live camera analysis detects restricted zone entry, crowd surges, and tailgating in real time.' },
-  { icon: MessageSquareWarning, title: 'Complaint Management', desc: 'Log an issue, track it live, watch it get resolved.' },
-  { icon: Shirt, title: 'Laundry', desc: 'Book a slot, follow your clothes from wash to ready.' },
-  { icon: Utensils, title: 'Mess', desc: 'Daily menus, timings and one-tap food feedback.' },
-  { icon: CalendarCheck, title: 'Attendance', desc: 'Automatic check-in and check-out, no queues.' },
-  { icon: UserCheck, title: 'Visitor Management', desc: 'OTP-verified visitor entry with a full history log.' },
-  { icon: Siren, title: 'Emergency SOS', desc: 'One tap alerts security, your warden and your parents.' },
-  { icon: ClipboardList, title: 'Room Inspection', desc: 'Scheduled checks and past results, tracked per room.' },
-  { icon: ArrowRight, title: 'AI Warden Assistant', desc: 'Ask about incidents, alerts, camera status — answered from live data, not a script.' },
-]
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -25,92 +10,109 @@ export default function Landing() {
     <AnimatedBackground>
       <LiquidNav />
 
-      {/* Nav */}
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <div className="flex items-center gap-2 text-white">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Building2 className="h-4 w-4" />
+      {/* Top Navbar */}
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+        <div className="flex items-center gap-2.5 text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-liquid">
+            <Building2 className="h-5 w-5" />
           </div>
-          <span className="font-display text-lg font-semibold">NestOS</span>
+          <div>
+            <span className="font-display text-lg font-bold tracking-tight text-white block leading-none">Trinity Engine</span>
+            <span className="text-[10px] text-white/50 font-medium">Sri Shakthi Institute ERP</span>
+          </div>
         </div>
-        <button
-          onClick={() => navigate('/login')}
-          className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/90 transition hover:bg-white/10"
-        >
-          Login
-        </button>
-      </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/admin')}
+            className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white/80 transition hover:bg-white/10"
+          >
+            <ShieldCheck className="h-4 w-4 text-amber-400" /> Admin Portal
+          </button>
+          <button
+            onClick={() => navigate('/login')}
+            className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-white shadow-liquid transition hover:bg-primary/90"
+          >
+            Student Login
+          </button>
+        </div>
+      </header>
 
-      {/* Hero */}
-      <section className="mx-auto flex max-w-4xl flex-col items-center px-6 pt-16 pb-24 text-center md:pt-24">
+      {/* Hero Section */}
+      <section className="mx-auto flex min-h-[60vh] max-w-4xl flex-col items-center justify-center px-6 py-12 text-center md:py-20">
         <motion.span
-          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          className="mb-5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/70"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-4 flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold text-primary uppercase tracking-widest"
         >
-          Built for wardens, students and security teams
+          <Sparkles className="h-3.5 w-3.5" /> AI Powered Smart Hostel Management Platform
         </motion.span>
         <motion.h1
-          initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.05 }}
-          className="font-display text-4xl font-semibold leading-tight text-white md:text-6xl"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.05 }}
+          className="font-display text-4xl font-extrabold leading-tight text-white md:text-6xl tracking-tight"
         >
-          AI Powered Hostel<br className="hidden md:block" /> Management System
+          Trinity Engine
         </motion.h1>
         <motion.p
-          initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }}
-          className="mt-5 max-w-xl text-balance text-base text-white/60 md:text-lg"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="mt-6 max-w-2xl text-balance text-base text-white/70 md:text-lg leading-relaxed"
         >
-          Smart, secure and automated hostel management — attendance, mess, laundry, security and SOS, all in one calm dashboard.
+          One intelligent platform to manage every aspect of hostel life—students, attendance, complaints, security, notices, and administration.
         </motion.p>
+
+        {/* Primary Action Button */}
         <motion.div
-          initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}
-          className="mt-8 flex flex-wrap items-center justify-center gap-3"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.25 }}
+          className="mt-8 flex items-center justify-center gap-4"
         >
           <button
             onClick={() => navigate('/login')}
-            className="group flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-white shadow-glow transition hover:bg-primary/90"
+            className="group flex items-center gap-2 rounded-full bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-liquid transition hover:bg-primary/90"
           >
-            Login
+            Student Login
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </button>
-          <a
-            href="#about"
-            className="rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm text-white/80 transition hover:bg-white/10"
-          >
-            Learn more
-          </a>
         </motion.div>
-      </section>
 
-      {/* Feature grid */}
-      <section id="about" className="mx-auto max-w-6xl px-6 pb-28">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map(({ icon: Icon, title, desc }, i) => (
-            <motion.div
-              key={title}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.45, delay: (i % 3) * 0.06 }}
-              whileHover={{ y: -4 }}
-              className="glass rounded-2xl p-5"
-            >
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20 text-primary">
-                <Icon className="h-5 w-5" strokeWidth={1.75} />
-              </div>
-              <h3 className="font-display text-base font-semibold text-white">{title}</h3>
-              <p className="mt-1.5 text-sm text-white/55">{desc}</p>
-            </motion.div>
-          ))}
-        </div>
+        {/* Enterprise Metrics Ribbon */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.35 }}
+          className="mt-14 grid grid-cols-2 gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-left sm:grid-cols-4 w-full max-w-3xl"
+        >
+          <div className="border-r border-white/10 pr-3 last:border-r-0">
+            <p className="text-xl font-bold text-white">1,000+</p>
+            <p className="text-xs text-white/50">Students Managed</p>
+          </div>
+          <div className="border-r border-white/10 pr-3 last:border-r-0">
+            <p className="text-xl font-bold text-emerald-400">99.9%</p>
+            <p className="text-xs text-white/50">Attendance Accuracy</p>
+          </div>
+          <div className="border-r border-white/10 pr-3 last:border-r-0">
+            <p className="text-xl font-bold text-primary">24/7</p>
+            <p className="text-xs text-white/50">Security Monitoring</p>
+          </div>
+          <div>
+            <p className="text-xl font-bold text-amber-400">Instant</p>
+            <p className="text-xs text-white/50">AI Assistance</p>
+          </div>
+        </motion.div>
       </section>
 
       {/* Footer */}
       <footer className="border-t border-white/10 px-6 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-sm text-white/40 md:flex-row">
-          <span>© 2026 GuardianAI. Privacy-first AI security monitoring for hostels.</span>
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-xs text-white/40 md:flex-row">
+          <span>© 2026 Trinity Engine — AI Powered Smart Hostel Management Platform.</span>
           <div className="flex gap-5">
-            <a href="#about" className="hover:text-white/70">About</a>
-            <button onClick={() => navigate('/login')} className="hover:text-white/70">Login</button>
+            <button onClick={() => navigate('/login')} className="hover:text-white/70">Student Portal</button>
+            <button onClick={() => navigate('/admin')} className="hover:text-white/70">Admin Portal</button>
             <button onClick={() => navigate('/settings')} className="hover:text-white/70">Settings</button>
           </div>
         </div>
@@ -118,4 +120,3 @@ export default function Landing() {
     </AnimatedBackground>
   )
 }
-

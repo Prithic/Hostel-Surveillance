@@ -1,4 +1,6 @@
 {
+  "reference_width": 640,
+  "reference_height": 480,
   "zones": [
     {
       "zone_id": "restricted_a",

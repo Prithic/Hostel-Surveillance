@@ -22,7 +22,6 @@ import Visitors from './pages/Visitors'
 import Inspection from './pages/Inspection'
 import Inventory from './pages/Inventory'
 import Settings from './pages/Settings'
-import Chatbot from './pages/Chatbot'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -30,6 +29,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/admin" element={<AdminLogin />} />
       <Route path="/admin-login" element={<AdminLogin />} />
 
       <Route element={<DashboardLayout />}>
@@ -48,7 +48,6 @@ export default function App() {
         <Route path="/inspection" element={<Inspection />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/analytics" element={<Analytics />} />
-        <Route path="/chatbot" element={<Chatbot />} />
         <Route path="/settings" element={<Settings />} />
 
         {/* Admin-only — requires a separate sign-in at /admin-login */}

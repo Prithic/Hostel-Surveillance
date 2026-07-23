@@ -1,202 +1,220 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Camera, ShieldAlert, Users, VideoOff, Activity, LogOut } from 'lucide-react'
+import { Camera, ShieldAlert, Activity, Video, LogOut, RefreshCw } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
 import StatCard from '../components/StatCard'
 import Badge from '../components/Badge'
 import { logoutAdmin } from '../auth'
 
-const API = import.meta.env.VITE_API_URL || ''
+const GUARDIAN_API = import.meta.env.VITE_GUARDIAN_API_URL || ''
+const GUARDIAN_EMAIL = import.meta.env.VITE_GUARDIAN_ADMIN_EMAIL || 'admin@guardian.ai'
+const GUARDIAN_PASSWORD = import.meta.env.VITE_GUARDIAN_ADMIN_PASSWORD || 'Warden@2026'
+
+async function guardianLogin() {
+  const res = await fetch(`${GUARDIAN_API}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email: GUARDIAN_EMAIL, password: GUARDIAN_PASSWORD }),
+  })
+  if (!res.ok) throw new Error('Guardian auth failed')
+  const data = await res.json()
+  sessionStorage.setItem('guardian_token', data.token)
+  return data.token
+}
+
+function authHeaders() {
+  const token = sessionStorage.getItem('guardian_token') || ''
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+async function guardianGet(path) {
+  let res = await fetch(`${GUARDIAN_API}${path}`, { credentials: 'include', headers: authHeaders() })
+  if (res.status === 401) {
+    await guardianLogin()
+    res = await fetch(`${GUARDIAN_API}${path}`, { credentials: 'include', headers: authHeaders() })
+  }
+  if (!res.ok) throw new Error(`api ${res.status}`)
+  return res.json()
+}
+
+async function guardianPatch(path) {
+  let res = await fetch(`${GUARDIAN_API}${path}`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+  })
+  if (res.status === 401) {
+    await guardianLogin()
+    res = await fetch(`${GUARDIAN_API}${path}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    })
+  }
+  if (!res.ok) throw new Error(`api ${res.status}`)
+  return res.json()
+}
+
 const levelTone = { critical: 'danger', high: 'danger', medium: 'warning', low: 'info' }
 
 export default function SecurityDashboard() {
   const navigate = useNavigate()
-  const [status, setStatus] = useState({ camera_online: false, fps: 0, person_count: 0, camera_id: '—' })
-  const [alerts, setAlerts] = useState([])
+  const streamSrc = `${GUARDIAN_API}/api/stream`
+  const [status, setStatus] = useState(null)
   const [incidents, setIncidents] = useState([])
-  const [cfg, setCfg] = useState(null)
   const [error, setError] = useState('')
-
-  function handleAdminLogout() {
-    logoutAdmin()
-    navigate('/admin-login')
-  }
+  const [busy, setBusy] = useState(null)
 
   async function refresh() {
     try {
-      const [s, a, i, c] = await Promise.all([
-        fetch(`${API}/api/status`).then((r) => r.json()),
-        fetch(`${API}/api/alerts?limit=20`).then((r) => r.json()),
-        fetch(`${API}/api/incidents?limit=20`).then((r) => r.json()),
-        fetch(`${API}/api/config`).then((r) => r.json()).catch(() => null),
+      const [st, inc] = await Promise.all([
+        guardianGet('/api/status'),
+        guardianGet('/api/incidents?limit=20'),
       ])
-      setStatus(s)
-      setAlerts(a)
-      setIncidents(i)
-      if (c && Object.keys(c).length) setCfg(c)
+      setStatus(st)
+      setIncidents(Array.isArray(inc) ? inc : [])
       setError('')
     } catch (e) {
-      setError('Backend offline — start backend: uvicorn backend.main:app --host 127.0.0.1 --port 8000')
+      setError(e.message || 'Backend unreachable')
     }
   }
 
   useEffect(() => {
-    refresh()
-    const t = setInterval(refresh, 2000)
-    let ws
-    try {
-      const wsUrl = (API || `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:8000`) + '/ws/alerts'
-      ws = new WebSocket(API ? API.replace(/^http/, 'ws') + '/ws/alerts' : `ws://${location.hostname}:8000/ws/alerts`)
-      ws.onmessage = (ev) => {
-        try {
-          const msg = JSON.parse(ev.data)
-          if (msg.type === 'alert' && msg.incident) {
-            setAlerts((prev) => [msg.incident, ...prev].slice(0, 20))
-          }
-        } catch { /* ignore */ }
+    let cancelled = false
+    ;(async () => {
+      try {
+        await guardianLogin()
+        if (!cancelled) await refresh()
+      } catch (e) {
+        if (!cancelled) setError('Start GuardianAI: uvicorn backend.main:app --port 8000')
       }
-    } catch { /* ignore */ }
-    return () => {
-      clearInterval(t)
-      ws?.close()
-    }
+    })()
+    const t = setInterval(() => { if (!cancelled) refresh() }, 4000)
+    return () => { cancelled = true; clearInterval(t) }
   }, [])
 
-  async function resolveIncident(id) {
+  async function resolve(id) {
+    setBusy(id)
     try {
-      await fetch(`${API}/api/incidents/${id}`, { method: 'PATCH' })
-      // Optimistically update UI; next poll will confirm
-      setIncidents((prev) => prev.map((i) => i.id === id ? { ...i, status: 'resolved' } : i))
-    } catch { /* ignore — next refresh will sync */ }
+      await guardianPatch(`/api/incidents/${id}`)
+      await refresh()
+    } catch {
+      setError('Resolve failed')
+    } finally {
+      setBusy(null)
+    }
   }
+
+  function handleAdminLogout() {
+    sessionStorage.removeItem('guardian_token')
+    logoutAdmin()
+    navigate('/admin-login')
+  }
+
+  const openCount = incidents.filter((i) => i.status === 'open').length
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-white/45">Signed in as security admin — live AI video feed & alerts enabled.</p>
-        <button
-          onClick={handleAdminLogout}
-          className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/55 transition hover:border-danger/40 hover:text-danger"
-        >
-          <LogOut className="h-3.5 w-3.5" /> End admin session
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-display text-sm font-semibold text-white">GuardianAI Command Center</p>
+          <p className="text-xs text-white/45">Live CCTV intelligence — no facial recognition.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={refresh}
+            className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/55 transition hover:text-white"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+          </button>
+          <button
+            type="button"
+            onClick={handleAdminLogout}
+            className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/55 transition hover:border-danger/40 hover:text-danger"
+          >
+            <LogOut className="h-3.5 w-3.5" /> End admin session
+          </button>
+        </div>
       </div>
 
       {error && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">{error}</div>
+        <p className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p>
       )}
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard icon={Camera} label="Camera Feed" value={status.camera_online ? 'Online' : 'Offline'} tone={status.camera_online ? 'success' : 'danger'} />
-        <StatCard icon={Users} label="People Tracked" value={String(status.person_count ?? 0)} tone="primary" />
-        <StatCard icon={ShieldAlert} label="Active Alerts" value={String(alerts.length)} tone="danger" />
-        <StatCard icon={Activity} label="Pipeline FPS" value={(status.fps ?? 0).toFixed?.(1) ?? '0'} tone="warning" />
+        <StatCard
+          icon={Camera}
+          label="Camera"
+          value={status?.camera_online ? 'Online' : 'Offline'}
+          tone={status?.camera_online ? 'success' : 'danger'}
+        />
+        <StatCard icon={Activity} label="FPS" value={status ? Number(status.fps || 0).toFixed(1) : '—'} tone="primary" />
+        <StatCard icon={Video} label="People" value={status?.person_count ?? '—'} tone="warning" />
+        <StatCard icon={ShieldAlert} label="Open incidents" value={openCount} tone="danger" />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Live camera stream */}
-        <GlassCard hover={false} className="p-5 lg:col-span-2">
-          <h2 className="mb-4 font-display text-sm font-semibold text-white">Live AI CCTV Stream</h2>
-          <div className="overflow-hidden rounded-xl border border-white/10 bg-ink">
-            {status.camera_online ? (
-              <img
-                src={`${API}/api/stream`}
-                alt="Live CCTV feed"
-                className="aspect-video w-full object-contain"
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-3 p-10 text-center">
-                <VideoOff className="h-10 w-10 text-danger" />
-                <p className="text-sm font-medium text-white/90">{status.camera_id || 'webcam-0'}</p>
-                <Badge tone="danger">offline</Badge>
-                <p className="text-xs text-white/50">Event-based surveillance — no facial recognition stored</p>
-              </div>
-            )}
-            {status.camera_online && (
-              <div className="flex items-center justify-between px-3 py-2 text-xs text-white/70">
-                <span>Camera: {status.camera_id}</span>
-                <Badge tone="success">online</Badge>
-              </div>
-            )}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+        <GlassCard hover={false} className="overflow-hidden p-0 lg:col-span-3">
+          <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
+            <h2 className="font-display text-sm font-semibold text-white">Annotated CCTV feed</h2>
+            <Badge tone={status?.camera_online ? 'success' : 'danger'}>
+              {status?.camera_online ? 'LIVE' : 'DOWN'}
+            </Badge>
+          </div>
+          <div className="bg-ink p-3">
+            <img
+              src={streamSrc}
+              alt="GuardianAI live stream"
+              className="mx-auto max-h-[420px] w-full rounded-xl object-contain"
+            />
           </div>
         </GlassCard>
 
-        {/* System metrics */}
-        <GlassCard hover={false} className="p-5">
-          <h2 className="mb-4 font-display text-sm font-semibold text-white">AI Engine Status</h2>
-          <ul className="space-y-3 text-sm text-white/70">
-            <li className="flex justify-between border-b border-white/10 pb-2"><span>Health State:</span> <span className="font-semibold text-white">{error ? 'Degraded' : 'Operational'}</span></li>
-            <li className="flex justify-between border-b border-white/10 pb-2"><span>YOLO Detection FPS:</span> <span className="font-semibold text-white">{(status.fps ?? 0).toFixed?.(1) ?? 0}</span></li>
-            <li className="flex justify-between border-b border-white/10 pb-2"><span>Current Tracking Count:</span> <span className="font-semibold text-white">{status.person_count ?? 0}</span></li>
-            <li className="flex justify-between border-b border-white/10 pb-2"><span>Crowd Threshold:</span> <span className="font-semibold text-white">{cfg ? `${cfg.crowd_threshold} people` : '—'}</span></li>
-            <li className="flex justify-between border-b border-white/10 pb-2"><span>Night Hours:</span> <span className="font-semibold text-white">{cfg ? `${cfg.night_start_hour}:00 – ${cfg.night_end_hour}:00` : '—'}</span></li>
-            <li className="flex justify-between border-b border-white/10 pb-2"><span>Inference Device:</span> <span className="font-semibold text-white">{cfg?.device ?? '—'}</span></li>
-            <li className="flex justify-between pb-1"><span>Total Incidents Logged:</span> <span className="font-semibold text-white">{incidents.length}</span></li>
-          </ul>
+        <GlassCard hover={false} className="p-5 lg:col-span-2">
+          <h2 className="mb-3 font-display text-sm font-semibold text-white">Incidents</h2>
+          <div className="max-h-[420px] space-y-2 overflow-y-auto">
+            {incidents.length === 0 && (
+              <p className="text-sm text-white/45">No incidents yet — pipeline is watching.</p>
+            )}
+            {incidents.map((inc) => (
+              <motion.div
+                key={inc.id}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-xl border border-white/10 px-3 py-2.5"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm text-white">{inc.reason}</p>
+                    <p className="mt-0.5 text-[11px] text-white/40">
+                      {inc.id} · {inc.incident_type} · {String(inc.timestamp || '').slice(0, 19)}
+                    </p>
+                  </div>
+                  <Badge tone={levelTone[(inc.severity || '').toLowerCase()] || 'info'}>
+                    {(inc.severity || '').toUpperCase()}
+                  </Badge>
+                </div>
+                {inc.status === 'open' && (
+                  <button
+                    type="button"
+                    disabled={busy === inc.id}
+                    onClick={() => resolve(inc.id)}
+                    className="mt-2 rounded-lg bg-primary/20 px-2.5 py-1 text-[11px] font-medium text-primary hover:bg-primary/30 disabled:opacity-50"
+                  >
+                    {busy === inc.id ? 'Resolving…' : 'Resolve'}
+                  </button>
+                )}
+                {inc.status === 'resolved' && (
+                  <p className="mt-1 text-[11px] text-success">Resolved</p>
+                )}
+              </motion.div>
+            ))}
+          </div>
         </GlassCard>
       </div>
-
-      {/* Alert Feed */}
-      <GlassCard hover={false} className="p-5">
-        <h2 className="mb-4 font-display text-sm font-semibold text-white">Real-Time Security Alerts (WebSocket)</h2>
-        <div className="space-y-3">
-          {alerts.length === 0 && <p className="text-sm text-white/50">No active alerts recorded yet.</p>}
-          {alerts.map((a) => (
-            <motion.div
-              key={a.id + (a.last_seen || a.timestamp || '')}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-between gap-3 rounded-lg border border-white/10 px-4 py-3"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`h-2 w-2 rounded-full ${a.severity === 'high' || a.severity === 'critical' ? 'bg-danger' : a.severity === 'medium' ? 'bg-warning' : 'bg-primary'}`} />
-                <div>
-                  <p className="text-sm text-white">{a.reason}</p>
-                  <p className="text-xs text-white/45">{a.id} · {a.camera_id} · tracks [{(a.track_ids || []).join(', ')}] · {a.timestamp}</p>
-                </div>
-              </div>
-              <Badge tone={levelTone[a.severity] || 'info'}>{a.severity}</Badge>
-            </motion.div>
-          ))}
-        </div>
-      </GlassCard>
-
-      {/* Incident History Log */}
-      <GlassCard hover={false} className="p-5">
-        <h2 className="mb-4 font-display text-sm font-semibold text-white">Incident History Log</h2>
-        <div className="space-y-2">
-          {incidents.length === 0 && <p className="text-sm text-white/50">No incidents logged.</p>}
-          {incidents.map((inc) => (
-            <div
-              key={inc.id}
-              className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-sm transition ${
-                inc.status === 'resolved' ? 'border-success/20 bg-success/5' : 'border-white/10'
-              }`}
-            >
-              <div className="min-w-0">
-                <p className="truncate text-white">{inc.reason}</p>
-                <p className="text-xs text-white/40">{inc.id} · {inc.incident_type?.replace(/_/g, ' ')} · {inc.timestamp?.slice(0, 19)}</p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <Badge tone={levelTone[inc.severity] || 'info'}>{inc.severity}</Badge>
-                {inc.status === 'resolved'
-                  ? <span className="text-xs font-medium text-success">resolved</span>
-                  : (
-                    <button
-                      onClick={() => resolveIncident(inc.id)}
-                      className="rounded-lg border border-success/30 px-2 py-1 text-xs text-success/80 transition hover:bg-success/10 hover:text-success"
-                    >
-                      Resolve
-                    </button>
-                  )
-                }
-              </div>
-            </div>
-          ))}
-        </div>
-      </GlassCard>
     </div>
   )
 }
-

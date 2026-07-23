@@ -4,19 +4,26 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+.pytest_cache/
 .env
+*.sqlite-shm
+*.sqlite-wal
 
-# Weights & Ultralytics runs
+# Weights & Ultralytics runs (download/copy locally — see models/custom/README.md)
 *.pt
 models/*.pt
+models/**/*.pt
 models/*.onnx
 models/*.engine
 runs/
+data/
+*.db
 videos/*
 !videos/.gitkeep
 *.mp4
 *.zip
 YOLOv8s_*.zip
+YOLOv8s_v4_production/
 
 # Dataset media & downloads (keep scripts, yaml, docs, .gitkeep)
 datasets/**/images/**
@@ -37,9 +44,22 @@ datasets/guardian_synthetic/augmented/**
 # IDE / OS
 .idea/
 .vscode/
+.cursor/
 .DS_Store
 Thumbs.db
+*.log
+*.tmp
+tmp/
+cache/
+.cache/
 
-# Node (frontend later)
+# Node
 node_modules/
 dist/
+build/
+coverage/
+frontend/.env
+trinity-api/.env
+nestos-api/.env
+nestos/.env
+trinity-engine/.env
