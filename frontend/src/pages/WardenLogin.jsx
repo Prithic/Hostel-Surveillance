@@ -1,10 +1,37 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate, Navigate } from 'react-router-dom'
-import { ShieldCheck, Lock, Mail, Eye, EyeOff, ArrowLeft, ArrowRight } from 'lucide-react'
+import { ShieldCheck, Lock, Mail, Eye, EyeOff, ArrowLeft, ArrowRight, User, Shirt } from 'lucide-react'
 import AnimatedBackground from '../components/AnimatedBackground'
 import { login } from '../services/guardianApi'
 import { isWardenAuthed } from '../auth'
+
+const QUICK_LOGINS = [
+  {
+    id: 'warden',
+    label: 'Login as Warden',
+    email: 'admin@guardian.ai',
+    password: 'Warden@2026',
+    Icon: ShieldCheck,
+    className: 'border-rose-500/40 bg-rose-500/15 text-rose-200 hover:bg-rose-500/25',
+  },
+  {
+    id: 'student',
+    label: 'Login as Student',
+    email: 'student@hostel.local',
+    password: 'Student@2026',
+    Icon: User,
+    className: 'border-sky-500/40 bg-sky-500/15 text-sky-200 hover:bg-sky-500/25',
+  },
+  {
+    id: 'laundry',
+    label: 'Login as Laundry',
+    email: 'laundry@hostel.local',
+    password: 'Laundry@2026',
+    Icon: Shirt,
+    className: 'border-amber-500/40 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25',
+  },
+]
 
 export default function WardenLogin() {
   const navigate = useNavigate()
@@ -18,18 +45,24 @@ export default function WardenLogin() {
     return <Navigate to="/dashboard" replace />
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault()
+  async function signIn(nextEmail, nextPassword) {
     setError('')
     setLoading(true)
+    setEmail(nextEmail)
+    setPassword(nextPassword)
     try {
-      await login(email.trim(), password)
+      await login(nextEmail.trim(), nextPassword)
       navigate('/dashboard')
     } catch (err) {
       setError(err.message || 'Invalid credentials')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    await signIn(email, password)
   }
 
   return (
@@ -54,7 +87,29 @@ export default function WardenLogin() {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <h1 className="font-display text-xl font-bold tracking-tight text-white">Trinity Engine</h1>
-            <p className="mt-1 text-xs text-white/60">Sign in with a real account — passwords are hashed in SQLite</p>
+            <p className="mt-1 text-xs text-white/60">One-click demo login, or sign in manually</p>
+          </div>
+
+          <div className="mb-5 space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">Quick login</p>
+            {QUICK_LOGINS.map(({ id, label, email: e, password: p, Icon, className }) => (
+              <button
+                key={id}
+                type="button"
+                disabled={loading}
+                onClick={() => signIn(e, p)}
+                className={`flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition disabled:opacity-60 ${className}`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {loading ? 'Signing in…' : label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mb-4 flex items-center gap-3 text-[10px] uppercase tracking-wider text-white/35">
+            <span className="h-px flex-1 bg-white/10" />
+            or manual
+            <span className="h-px flex-1 bg-white/10" />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -68,7 +123,7 @@ export default function WardenLogin() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="warden email"
+                  placeholder="email"
                   className="w-full rounded-xl bg-transparent py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/35 outline-none"
                 />
               </div>
@@ -105,20 +160,15 @@ export default function WardenLogin() {
               disabled={loading}
               className="flex w-full items-center justify-center gap-2 rounded-xl liquid-tint-danger py-2.5 text-sm font-medium text-white shadow-liquid transition disabled:opacity-70"
             >
-              {loading ? 'Signing in…' : (
+              {loading ? (
+                'Signing in…'
+              ) : (
                 <>
                   Enter command center <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </motion.button>
           </form>
-
-          <div className="mt-5 space-y-1 rounded-2xl border border-white/10 bg-white/5 p-3 text-[11px] text-white/55">
-            <p className="font-semibold text-white/70">Bootstrap accounts</p>
-            <p>Warden: admin@guardian.ai / Warden@2026</p>
-            <p>Student: student@hostel.local / Student@2026</p>
-            <p>Laundry: laundry@hostel.local / Laundry@2026</p>
-          </div>
         </motion.div>
       </div>
     </AnimatedBackground>

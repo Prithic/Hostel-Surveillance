@@ -5,7 +5,7 @@ export const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', roles: ['Warden', 'Student', 'Laundry Staff'] },
   { to: '/room-details', label: 'Room Details', roles: ['Warden', 'Student'] },
   { to: '/attendance', label: 'Attendance', roles: ['Warden', 'Student'] },
-  { to: '/leave', label: 'Leave', roles: ['Warden', 'Student'] },
+  { to: '/leave', label: 'Leave / Outpass', roles: ['Warden', 'Student'] },
   { to: '/notices', label: 'Hostel Notices', roles: ['Warden', 'Student', 'Laundry Staff'] },
   { to: '/fees', label: 'Fee Status', roles: ['Warden', 'Student'] },
   { to: '/complaints', label: 'Complaint Portal', roles: ['Warden', 'Student'] },
