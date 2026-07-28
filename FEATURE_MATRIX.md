@@ -1,52 +1,52 @@
-# FEATURE_MATRIX.md — GuardianAI + Trinity Engine console
+# FEATURE_MATRIX — live product (feat/real-product)
 
-**Date:** 2026-07-25  
-**Product:** Warden console — live CCTV security + live hostel ops (SQLite).
+**Product:** Trinity Engine hostel OS + GuardianAI CCTV  
+**Auth:** SQLite users (PBKDF2) — Warden / Student / Laundry Staff
 
 ## REAL
 
 | Feature | Evidence |
 |---------|----------|
-| Warden login | Guardian `POST /api/auth/login` — `admin@guardian.ai` / `Warden@2026` |
-| Full sidebar nav | All Trinity hostel pages restored in `App.jsx` + `Sidebar.jsx` |
-| Hostel data store | `backend/hostel.py` → SQLite `hostel_state` via `/api/hostel/*` |
-| Dashboard / rooms / notices / fees / mess / inventory / inspection | Read live from `/api/hostel/state` |
-| Complaints create | `POST /api/hostel/append` |
-| Leave apply + grant/deny | append + patch on `leaveRequests` |
-| Visitors / Lost & Found report | append to live store |
-| Laundry slot book | append `laundryTracking` |
-| SOS | `POST /api/hostel/sos` → persists event + critical Guardian incident + WS |
-| Security command center | stream, status, incidents, resolve, WebSocket |
-| Analytics / Config | Guardian `/api/analytics`, `/api/config` |
-| Warden assistant | `POST /api/chat` (live store only) |
+| Multi-user login | `backend/users.py` + `POST /api/auth/login` |
+| Role-gated nav + routes | `frontend/src/navAccess.js`, `RequireRole.jsx` |
+| Role-gated API | append/patch/replace + incidents/config require matching roles |
+| Hostel state | `backend/hostel.py` → SQLite `hostel_state` |
+| Attendance roster | PATCH `attendanceRoster` (Warden) |
+| Leave apply / grant | Student append; Warden patch status |
+| Complaints | append + Warden status patch |
+| Mess meal plan + ratings | replace `mealPlan`; append `messFeedback` |
+| Laundry book / claims / advance | append + patch (`Laundry Staff` + Warden) |
+| Visitors entry / exit | Warden append + patch exit |
+| Notices / events | Warden append |
+| Inspection schedule + logs | replace `nextInspection`; append `inspections` |
+| Inventory edit | Warden patch qty/condition |
+| Fees + record payment | Warden append `paymentHistory` + replace `feeStatus` |
+| SOS | `POST /api/hostel/sos` → event + critical incident + notification + WS |
+| In-app notifications | Topbar bell ← `notifications` store |
+| Security command center | stream, incidents, resolve, WS (Warden) |
+| Runtime config edit | `PUT /api/config` hot-swaps thresholds (Warden) |
+| Warden assistant | `POST /api/chat` over live data |
+| Password change | `POST /api/auth/password` |
 
-## PARTIAL
+## LIMITS (not fake — just scoped)
 
-| Feature | Limit |
-|---------|-------|
-| Attendance roster mark sheet | Toggle UI is local; attendance **log** rows come from live store |
-| Mess meal-plan selector | Choice is local; menu + ratings chart are live |
-| Laundry missing-claims board | Local list; bookings persist |
-| MJPEG stream | Open (needed for `<img>`) |
-| Chat | Keyword Q&A over live data, not an LLM |
-
-## REMOVED
-
-| Item | Reason |
-|------|--------|
-| Trinity Express mock login / `services/api.js` | Password theater |
-| Tk FAQ chatbot | Not store-backed |
-| Face-recognition attendance labels | False claim — seed uses QR/Manual |
+| Item | Limit |
+|------|-------|
+| MJPEG stream | Unauthenticated (LAN `<img>`) |
+| Chat | Keyword Q&A, not LLM |
+| SMS / email | Not integrated |
+| Payment gateway | Manual record only |
+| Face recognition | Not claimed |
 
 ## DEFERRED
 
 | Item | Notes |
 |------|-------|
-| `trinity-api/` Mongo ERP | Not required; hostel state lives in Guardian SQLite |
-| Auth on MJPEG | Signed URL / same-origin proxy later |
+| `trinity-api/` Mongo | Not used by the console |
 
-## How to run
+## Run
 
-1. `uvicorn backend.main:app --port 8000`
-2. `cd frontend && npm run dev` → http://127.0.0.1:5173
-3. Login → full nav is live against the same API
+```powershell
+.\scripts\setup.ps1
+.\scripts\start.ps1
+```

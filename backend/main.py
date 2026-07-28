@@ -10,6 +10,14 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
+# Load root `.env` before reading GUARDIAN_* (optional dependency).
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+except ImportError:
+    pass
+
 import cv2
 from fastapi import Depends, FastAPI, HTTPException, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware

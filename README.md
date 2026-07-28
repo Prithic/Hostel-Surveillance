@@ -1,50 +1,70 @@
-# GuardianAI — HackSprint '26
+# Trinity Engine + GuardianAI
 
-**Privacy-first hostel CCTV security for wardens**
-
-> Detect suspicious behaviour (not faces), raise actionable incidents, prioritize, and resolve — without facial recognition.
+**Hostel OS + CCTV security** — pull, setup, run. Multi-user roles. Live SQLite hostel ops. Real SOS → critical incidents.
 
 ---
 
-## Product surface (honest)
+## Pull and run (2 steps)
 
-| Route | What it is |
-|-------|------------|
-| `/` | Trinity Engine landing |
-| `/login` | Warden sign-in → Guardian API |
-| `/dashboard` | **Trinity Engine dashboard UI** (hostel overview shell + link to live security) |
-| `/security` | GuardianAI command center: live feed, status, incidents, resolve, WebSocket alerts |
-| `/analytics` | Live incident analytics from SQLite + pipeline |
-| `/config` | Read-only runtime configuration |
+### Windows (PowerShell)
 
-Floating **Warden assistant** answers only from live incidents / status / config (`POST /api/chat`).
+```powershell
+git clone https://github.com/Prithic/Hostel-Surveillance.git
+cd Hostel-Surveillance
+git checkout feat/real-product
 
-Hostel ERP sidebar pages (attendance, SOS, mess, …) were removed from navigation so we do not fake those workflows. The **Dashboard look your team loved is back** as the home screen after login.
-
-See `PRODUCT_AUDIT.md` and `FEATURE_MATRIX.md`.
-
----
-
-## Architecture
-
-```
-Camera / video file
-  → YOLO + ByteTrack → zones → rules
-  → SQLite incidents + alerts
-  → FastAPI (REST + MJPEG + WebSocket)
-  → Warden console
+powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1
 ```
 
+No webcam? Use `.\scripts\start.ps1 -NoCamera` (hostel ERP still works).
+
+### macOS / Linux
+
+```bash
+git clone https://github.com/Prithic/Hostel-Surveillance.git
+cd Hostel-Surveillance
+git checkout feat/real-product
+
+chmod +x scripts/*.sh
+./scripts/setup.sh
+./scripts/start.sh
+```
+
+No webcam? `./scripts/start.sh --no-camera`
+
+Open **http://127.0.0.1:5173/login**
+
 ---
 
-## Quick start (Windows PowerShell)
+## Login accounts (created on first API start)
 
-### Prerequisites
-- Python 3.10+, Node.js 18+
-- Webcam or demo `.mp4`
-- Weights under `models/` (see `models/custom/README.md`)
+| Role | Email | Password |
+|------|-------|----------|
+| **Warden** | `admin@guardian.ai` | `Warden@2026` |
+| **Student** | `student@hostel.local` | `Student@2026` |
+| **Laundry Staff** | `laundry@hostel.local` | `Laundry@2026` |
 
-### 1) Guardian API (`:8000`)
+Each role gets a filtered sidebar + matching API permissions.
+
+---
+
+## What works
+
+| Area | Behavior |
+|------|----------|
+| **Security** (Warden) | Live MJPEG, incidents, resolve, WebSocket alerts, analytics, editable thresholds |
+| **SOS** (all roles) | Persists event + critical `emergency_sos` incident + in-app notification + WS |
+| **Hostel ERP** | Attendance, leave, complaints, mess, laundry, visitors, notices, fees, inspection, inventory — mutations hit SQLite |
+| **Chat** | Keyword Q&A over live incidents/status (not an LLM) |
+
+See `FEATURE_MATRIX.md` for the full map.
+
+---
+
+## Manual start (if you skip scripts)
+
+**API** (`:8000`):
 
 ```powershell
 pip install -r requirements.txt
@@ -52,60 +72,55 @@ copy .env.example .env
 uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-Health: http://127.0.0.1:8000/health
-
-Default warden credentials are set in server env (see `.env.example`). Change them for any shared demo.
-
-### 2) Frontend (`:5173`)
+**Frontend** (`:5173`):
 
 ```powershell
 cd frontend
 copy .env.example .env
 npm install
-npm run dev
+npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-Open http://127.0.0.1:5173 → **Warden login** → command center.
+Health: http://127.0.0.1:8000/health
 
 ---
 
-## Demo script
+## Prerequisites
 
-1. Start API + frontend.
-2. Sign in with warden credentials.
-3. Confirm LIVE stream, FPS, people count.
-4. Trigger a restricted-zone / rule event (walk into polygon or use footage).
-5. Watch incident appear (WebSocket) → **Resolve**.
-6. Ask the Warden assistant: “What happened recently?” / “Camera status” / “Summary”.
+- Python **3.10+**
+- Node.js **18+**
+- Webcam optional (first YOLO run auto-downloads `yolov8n.pt` via Ultralytics)
 
----
-
-## Repository layout
-
-| Path | Role |
-|------|------|
-| `ai/` | Detection, tracking, zones, rules, pipeline |
-| `backend/` | FastAPI auth, SQLite, stream, REST, WebSocket |
-| `frontend/` | Warden console only |
-| `datasets/zones/` | Zone polygons |
-| `models/` | Weights (gitignored) |
-| `trinity-api/` | **Deferred** — not part of the GuardianAI product UI |
+Weights are gitignored. Default model is COCO `yolov8n` (good recall on webcam). Optional custom hostel weights: set `GUARDIAN_MODEL` in `.env` (see `models/custom/README.md`).
 
 ---
 
-## Behaviour rules
+## Architecture
 
-| Rule | Trigger |
-|------|---------|
-| Restricted zone entry | Person in restricted polygon |
-| Crowd | Person count ≥ `GUARDIAN_CROWD` |
-| Night movement | Person during night window |
-| Tailgating | Multiple restricted entries in a short window |
+```
+Webcam / video
+  → YOLO + ByteTrack → zones → rules
+  → SQLite (incidents + hostel_state + users)
+  → FastAPI (:8000) REST + MJPEG + WebSocket
+  → Trinity console (:5173)
+```
+
+`trinity-api/` (Nest/Mongo) is **not** required for this product.
 
 ---
 
-## Known honest limits
+## Demo checklist
 
-- MJPEG `/api/stream` is open (needed for `<img>` tags on LAN demos).
-- Chat is store-backed keyword Q&A, not a general LLM.
-- Config UI is read-only; change env and restart the API.
+1. Login as **Warden** → Security: stream + FPS + people.
+2. Login as **Student** → apply leave, raise complaint, trigger SOS (no Security nav).
+3. Login as **Laundry** → advance laundry status / claims (no leave grant / config).
+4. Warden → resolve SOS incident; check topbar notifications.
+
+---
+
+## Known limits (honest)
+
+- MJPEG `/api/stream` is open (needed for `<img>` on LAN).
+- Chat is store-backed keywords, not a general LLM.
+- No real SMS/email gateway or payment processor.
+- QR outpass is a digital pass UI, not a gate scanner.

@@ -1,10 +1,10 @@
-# Custom GuardianAI detector weights
+# Custom detector weights (optional)
 
-Place production weights here:
+Default product path uses **COCO `yolov8n.pt`** (auto-downloaded by Ultralytics on first run).
 
-- `yolov8s_v4_production.pt` (preferred)
-- Fallback used by backend if missing: `models/yolov8n.pt`
+To use hostel-trained weights instead:
 
-Weights are **gitignored** (`*.pt`). Obtain from the team / training run — do not commit `.pt` files.
+1. Place `yolov8s_v4_production.pt` here
+2. Set in `.env`: `GUARDIAN_MODEL=models/custom/yolov8s_v4_production.pt`
 
-Class `0` may be named `item` in custom checkpoints; runtime treats it as person detection for the hostel pipeline.
+Weights are **gitignored** (`*.pt`) — do not commit them.
