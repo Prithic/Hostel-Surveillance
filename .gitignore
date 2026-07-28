@@ -20,6 +20,7 @@ data/
 *.db
 videos/*
 !videos/.gitkeep
+!videos/README.md
 *.mp4
 *.zip
 YOLOv8s_*.zip

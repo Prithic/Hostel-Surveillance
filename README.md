@@ -115,6 +115,13 @@ Webcam / video
 2. Login as **Student** → apply leave, raise complaint, trigger SOS (no Security nav).
 3. Login as **Laundry** → advance laundry status / claims (no leave grant / config).
 4. Warden → resolve SOS incident; check topbar notifications.
+5. **Judge video:** copy MP4 into `videos/` → Security → **Play video** (or `.\scripts\start-video.ps1 -Video ...`).
+
+---
+
+## Judge footage
+
+Copy hostel clips into `videos/` (mp4 ignored by git). Warden can hot-swap on Security without restarting the whole stack. Clips **loop**. Switch back with **Use webcam**.
 
 ---
 
