@@ -128,6 +128,14 @@ Webcam
 6. **Laundry login** → advance a laundry batch / claim.  
 7. **Honest close:** “No face ID, no fake SMS — ops + behaviour AI that actually persists.”
 
+### Judge-provided videos
+
+1. Copy the MP4 into `videos/` (example: `videos/judge_clip.mp4`).
+2. Warden → **Security** → paste path → **Play video** (hot-swap, no full restart).
+3. Or cold-start: `.\scripts\start-video.ps1 -Video .\videos\judge_clip.mp4`
+4. Clip **loops**; YOLO still draws people + rules still fire. Use **Use webcam** to switch back.
+5. Prefer default `yolov8n` for unknown footage (better general recall).
+
 ---
 
 ## 8. Judge Q&A (practice answers)

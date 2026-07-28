@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Camera, ShieldAlert, Activity, Video, RefreshCw } from 'lucide-react'
+import { Camera, ShieldAlert, Activity, Video, RefreshCw, Film } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
 import StatCard from '../components/StatCard'
 import Badge from '../components/Badge'
-import { alertsWsUrl, apiGet, apiPatch, streamUrl } from '../services/guardianApi'
+import { alertsWsUrl, apiGet, apiPatch, apiPut, streamUrl } from '../services/guardianApi'
 
 const levelTone = { critical: 'danger', high: 'danger', medium: 'warning', low: 'info' }
 
@@ -16,6 +16,10 @@ export default function SecurityDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(null)
+  const [videoPath, setVideoPath] = useState('videos/judge_clip.mp4')
+  const [sourceMsg, setSourceMsg] = useState('')
+  const [sourceBusy, setSourceBusy] = useState(false)
+  const [streamKey, setStreamKey] = useState(0)
 
   const refresh = useCallback(async () => {
     try {
@@ -35,7 +39,6 @@ export default function SecurityDashboard() {
 
   useEffect(() => {
     refresh()
-    // Status (FPS/people) needs a light poll; incidents primarily via WS.
     const t = setInterval(refresh, 8000)
     return () => clearInterval(t)
   }, [refresh])
@@ -63,7 +66,7 @@ export default function SecurityDashboard() {
           })
         }
       } catch {
-        /* ignore malformed */
+        /* ignore */
       }
     }
     return () => {
@@ -81,6 +84,21 @@ export default function SecurityDashboard() {
       setError(e.message || 'Resolve failed')
     } finally {
       setBusy(null)
+    }
+  }
+
+  async function switchSource(source, cameraId) {
+    setSourceBusy(true)
+    setSourceMsg('')
+    try {
+      const res = await apiPut('/api/source', { source, camera_id: cameraId })
+      setSourceMsg(`Source → ${res.source} (${res.camera_id})`)
+      setStreamKey((k) => k + 1)
+      await refresh()
+    } catch (e) {
+      setSourceMsg(e.message || 'Source switch failed')
+    } finally {
+      setSourceBusy(false)
     }
   }
 
@@ -104,6 +122,41 @@ export default function SecurityDashboard() {
         </button>
       </div>
 
+      <GlassCard hover={false} className="p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <Film className="h-4 w-4 text-primary" />
+          <h2 className="font-display text-sm font-semibold text-white">Judge footage / webcam switch</h2>
+        </div>
+        <p className="mb-3 text-[11px] text-white/45">
+          Drop judge clips into <span className="font-mono text-white/70">videos/</span>, then apply here. Files loop automatically.
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input
+            value={videoPath}
+            onChange={(e) => setVideoPath(e.target.value)}
+            placeholder="videos/judge_clip.mp4"
+            className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-primary"
+          />
+          <button
+            type="button"
+            disabled={sourceBusy}
+            onClick={() => switchSource(videoPath.trim(), 'judge-footage')}
+            className="rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+          >
+            {sourceBusy ? 'Switching…' : 'Play video'}
+          </button>
+          <button
+            type="button"
+            disabled={sourceBusy}
+            onClick={() => switchSource('0', 'webcam-0')}
+            className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 disabled:opacity-50"
+          >
+            Use webcam
+          </button>
+        </div>
+        {sourceMsg && <p className="mt-2 text-[11px] text-emerald-400">{sourceMsg}</p>}
+      </GlassCard>
+
       {liveAlert && liveAlert.status === 'open' && (
         <div className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-white">
           <span className="font-semibold text-warning">New alert:</span>{' '}
@@ -115,9 +168,7 @@ export default function SecurityDashboard() {
       {error && (
         <p className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p>
       )}
-      {loading && !status && (
-        <p className="text-sm text-white/45">Loading live status…</p>
-      )}
+      {loading && !status && <p className="text-sm text-white/45">Loading live status…</p>}
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard
@@ -141,7 +192,8 @@ export default function SecurityDashboard() {
           </div>
           <div className="bg-ink p-3">
             <img
-              src={streamUrl()}
+              key={streamKey}
+              src={`${streamUrl()}?t=${streamKey}`}
               alt="GuardianAI live stream"
               className="mx-auto max-h-[420px] w-full rounded-xl object-contain"
             />
@@ -183,9 +235,7 @@ export default function SecurityDashboard() {
                     {busy === inc.id ? 'Resolving…' : 'Resolve'}
                   </button>
                 )}
-                {inc.status === 'resolved' && (
-                  <p className="mt-1 text-[11px] text-success">Resolved</p>
-                )}
+                {inc.status === 'resolved' && <p className="mt-1 text-[11px] text-success">Resolved</p>}
               </motion.div>
             ))}
           </div>

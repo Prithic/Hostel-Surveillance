@@ -83,14 +83,18 @@ class OpenCVVideoStream(VideoStream):
     def read(self) -> Frame | None:
         if self._cap is None:
             raise RuntimeError("stream is not open")
-        
+
         if self._is_live:
             with self._lock:
                 return self._latest_frame.copy() if self._latest_frame is not None else None
-        else:
-            ok, frame = self._cap.read()
-            return frame if ok else None
 
+        ok, frame = self._cap.read()
+        if ok and frame is not None:
+            return frame
+        # File / offline clip ended — loop for judge demos (ponytail: simple seek; upgrade to playlist later).
+        self._cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        ok, frame = self._cap.read()
+        return frame if ok and frame is not None else None
     def close(self) -> None:
         self._running = False
         if self._thread is not None:

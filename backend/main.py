@@ -84,6 +84,13 @@ class PasswordChangeRequest(BaseModel):
     new_password: str = Field(min_length=8, max_length=200)
 
 
+class SourceSwitchRequest(BaseModel):
+    """Webcam index as digit string, or path to an .mp4/.avi/.mkv judge clip."""
+
+    source: str = Field(min_length=1, max_length=500)
+    camera_id: str = Field(default="judge-footage", min_length=1, max_length=64)
+
+
 class Hub:
     def __init__(self) -> None:
         self.store = IncidentStore()
@@ -138,10 +145,9 @@ def _pipeline_loop(pipe: GuardianPipeline) -> None:
         while pipe.status.online:
             result = pipe.read()
             if result is None:
-                if pipe.is_live:
-                    time.sleep(0.02)
-                    continue
-                break
+                # Live: wait for next cam frame. File: wait while clip loops/seeks.
+                time.sleep(0.02)
+                continue
             annotated = pipe.annotate(result.frame, result.tracks)
             hub.set_jpeg(annotated)
     except Exception as exc:  # noqa: BLE001
@@ -155,21 +161,24 @@ def _pipeline_loop(pipe: GuardianPipeline) -> None:
             pass
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    hub._loop = asyncio.get_running_loop()
-    hub.alerts.subscribe(_on_alert)
+def _build_config(source: str | int | None = None) -> AIConfig:
     zones = ROOT / "datasets" / "zones" / "default_zones.json"
-    # Custom hostel weights miss many webcam/close-up frames (class "item", low recall).
-    # Prefer COCO yolov8n for live demo; override with GUARDIAN_MODEL=.../yolov8s_v4_production.pt
     env_model = os.environ.get("GUARDIAN_MODEL", "").strip()
     model = Path(env_model) if env_model else ROOT / "models" / "yolov8n.pt"
     if not model.is_file():
         model = ROOT / "models" / "custom" / "yolov8s_v4_production.pt"
     if not model.is_file():
         model = Path("yolov8n.pt")
-    cfg = AIConfig(
-        source=_parse_source(os.environ.get("GUARDIAN_SOURCE", "0")),
+    raw_source = source if source is not None else os.environ.get("GUARDIAN_SOURCE", "0")
+    if not isinstance(raw_source, (int,)) and not (isinstance(raw_source, str) and raw_source.isdigit()):
+        # Resolve relative video paths from repo root for judge USB clips.
+        p = Path(str(raw_source))
+        if not p.is_file() and not p.is_absolute():
+            candidate = ROOT / p
+            if candidate.is_file():
+                raw_source = str(candidate)
+    return AIConfig(
+        source=_parse_source(str(raw_source)),
         model_path=model,
         zones_path=zones if zones.is_file() else None,
         camera_id=os.environ.get("GUARDIAN_CAMERA_ID", "webcam-0"),
@@ -179,10 +188,22 @@ async def lifespan(app: FastAPI):
         night_start_hour=int(os.environ.get("GUARDIAN_NIGHT_START", "22")),
         night_end_hour=int(os.environ.get("GUARDIAN_NIGHT_END", "5")),
     )
+
+
+def _spawn_pipeline(cfg: AIConfig) -> GuardianPipeline:
     pipe = GuardianPipeline(config=cfg, incidents=hub.incidents, alerts=hub.alerts)
     hub.pipeline = pipe
     if os.environ.get("GUARDIAN_ENABLE_CAMERA", "1") != "0":
         threading.Thread(target=_pipeline_loop, args=(pipe,), daemon=True).start()
+    return pipe
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    hub._loop = asyncio.get_running_loop()
+    hub.alerts.subscribe(_on_alert)
+    cfg = _build_config()
+    _spawn_pipeline(cfg)
     hub.store.audit("startup", f"source={cfg.source} model={cfg.model_path}")
     yield
     if hub.pipeline is not None:
@@ -482,6 +503,46 @@ def api_config_update(body: ConfigUpdateRequest, session: Session = Depends(requ
         "device": cfg.device,
         "model_path": str(cfg.model_path),
         "source": str(cfg.source),
+    }
+
+
+@app.put("/api/source")
+def api_switch_source(body: SourceSwitchRequest, session: Session = Depends(require_role("Warden"))) -> dict[str, Any]:
+    """Hot-swap webcam ↔ judge video file without restarting the whole API."""
+    src = body.source.strip().strip('"')
+    # Allow relative paths under repo / videos/
+    if src not in ("0", "1", "2") and not Path(src).is_file():
+        alt = ROOT / src
+        alt2 = ROOT / "videos" / Path(src).name
+        if alt.is_file():
+            src = str(alt)
+        elif alt2.is_file():
+            src = str(alt2)
+        else:
+            raise HTTPException(status_code=400, detail=f"Video/camera source not found: {body.source}")
+
+    old = hub.pipeline
+    if old is not None:
+        old.status.online = False
+        try:
+            old.close()
+        except Exception:  # noqa: BLE001
+            pass
+        time.sleep(0.25)
+
+    os.environ["GUARDIAN_CAMERA_ID"] = body.camera_id
+    cfg = _build_config(src)
+    # Force camera_id from request
+    from dataclasses import replace
+
+    cfg = replace(cfg, camera_id=body.camera_id, source=_parse_source(src))
+    pipe = _spawn_pipeline(cfg)
+    hub.store.audit("source_switch", f"{src} by {session.email}")
+    return {
+        "status": "ok",
+        "source": str(pipe.config.source),
+        "camera_id": pipe.config.camera_id,
+        "online": pipe.status.online,
     }
 
 
