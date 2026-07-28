@@ -1,88 +1,23 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FileClock, Plus, X, CheckCircle, ShieldAlert, ShieldCheck, XCircle, QrCode, Phone, MapPin, Bus, Calendar, Clock, Lock } from 'lucide-react'
+import { FileClock, Plus, X, CheckCircle, ShieldCheck, XCircle, QrCode, Phone } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
 import Badge from '../components/Badge'
 import Modal from '../components/Modal'
+import { useHostel } from '../hostel/HostelContext'
+import { useRoleCheck } from '../hooks/useRoleCheck'
+import { getDisplayName, me } from '../services/guardianApi'
 
 const toneMap = { 'Approved Pass': 'success', 'Pending Warden Permission': 'warning', 'Permission Denied': 'danger' }
 
 export default function Leave() {
-  const [userRole, setUserRole] = useState('')
+  const { data, loading, error, append, patchItem } = useHostel()
+  const { isAdminRole } = useRoleCheck()
   const [open, setOpen] = useState(false)
   const [selectedPass, setSelectedPass] = useState(null)
   const [qrModalOpen, setQrModalOpen] = useState(false)
+  const [profile, setProfile] = useState({ name: getDisplayName(), student_id: '', room: '' })
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('nestos_user')
-      if (stored) {
-        const u = JSON.parse(stored)
-        setUserRole(u.role || 'Student')
-      }
-    } catch (e) {
-      setUserRole('Student')
-    }
-  }, [])
-
-  const isAdminRole = ['Admin', 'Super Admin', 'Chief Warden', 'Warden'].includes(userRole)
-
-  // Full-detail outpasses dataset
-  const [requests, setRequests] = useState([
-    {
-      id: 'OUT-9921',
-      studentName: 'Sharan M',
-      regNo: '7176211001',
-      room: 'B-214',
-      dept: 'AIML (Year 2)',
-      type: 'Weekend Home Visit',
-      destination: 'Coimbatore, Tamil Nadu (Home)',
-      reason: 'Family event & weekend home visit',
-      outTime: '2026-07-24 05:00 PM',
-      inTime: '2026-07-26 08:00 PM',
-      travelMode: 'Personal Bike / Bus',
-      parentPhone: '9842100000',
-      parentConfirmed: true,
-      status: 'Pending Warden Permission',
-      appliedOn: '2026-07-22',
-    },
-    {
-      id: 'OUT-9804',
-      studentName: 'Akash K',
-      regNo: '7176211002',
-      room: 'A-201',
-      dept: 'CSE (Year 2)',
-      type: 'Night Outpass',
-      destination: 'TNPESU Hackathon Campus',
-      reason: 'Participating in 24hr National Hackathon',
-      outTime: '2026-07-20 06:00 PM',
-      inTime: '2026-07-21 10:00 AM',
-      travelMode: 'Train (Express)',
-      parentPhone: '9443200000',
-      parentConfirmed: true,
-      status: 'Approved Pass',
-      appliedOn: '2026-07-18',
-    },
-    {
-      id: 'OUT-9781',
-      studentName: 'Vignesh M',
-      regNo: '7176211003',
-      room: 'B-102',
-      dept: 'AI&DS (Year 1)',
-      type: 'Emergency Outpass',
-      destination: 'City Hospital Coimbatore',
-      reason: 'Medical checkup and consultation',
-      outTime: '2026-07-15 09:00 AM',
-      inTime: '2026-07-15 02:00 PM',
-      travelMode: 'Taxi / Auto',
-      parentPhone: '9894100000',
-      parentConfirmed: true,
-      status: 'Approved Pass',
-      appliedOn: '2026-07-14',
-    },
-  ])
-
-  // Comprehensive Student Outpass Form
   const [form, setForm] = useState({
     type: 'Night Outpass',
     destination: '',
@@ -96,16 +31,25 @@ export default function Leave() {
     parentConfirmed: true,
   })
 
-  function handleStudentSubmit(e) {
+  useEffect(() => {
+    me().then((u) => setProfile(u)).catch(() => {})
+  }, [])
+
+  if (loading) return <p className="text-sm text-white/45">Loading outpasses…</p>
+  if (error) return <p className="text-sm text-danger">{error}</p>
+  if (!data) return null
+
+  const requests = data.leaveRequests || []
+
+  async function handleStudentSubmit(e) {
     e.preventDefault()
     if (!form.destination || !form.reason || !form.outDate || !form.inDate) return
-
     const newPass = {
       id: `OUT-${Math.floor(1000 + Math.random() * 9000)}`,
-      studentName: 'Sharan M (You)',
-      regNo: '7176211001',
-      room: 'B-214',
-      dept: 'AIML (Year 2)',
+      studentName: profile.name || data.currentUser?.name || 'Student',
+      regNo: profile.student_id || data.currentUser?.studentId || '—',
+      room: profile.room || data.currentUser?.room || '—',
+      dept: data.currentUser?.block || 'Hostel',
       type: form.type,
       destination: form.destination,
       reason: form.reason,
@@ -117,27 +61,18 @@ export default function Leave() {
       status: 'Pending Warden Permission',
       appliedOn: new Date().toISOString().slice(0, 10),
     }
-
-    setRequests([newPass, ...requests])
+    await append('leaveRequests', newPass)
     setOpen(false)
     setForm({
-      type: 'Night Outpass',
-      destination: '',
-      reason: '',
-      outDate: '',
-      outTime: '05:00 PM',
-      inDate: '',
-      inTime: '08:00 PM',
-      travelMode: 'Bus',
-      parentPhone: '9842100000',
-      parentConfirmed: true,
+      type: 'Night Outpass', destination: '', reason: '', outDate: '', outTime: '05:00 PM',
+      inDate: '', inTime: '08:00 PM', travelMode: 'Bus', parentPhone: '9842100000', parentConfirmed: true,
     })
   }
 
-  function handleWardenPermission(id, decision) {
-    setRequests((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: decision === 'Grant' ? 'Approved Pass' : 'Permission Denied' } : r))
-    )
+  async function handleWardenPermission(id, decision) {
+    await patchItem('leaveRequests', id, {
+      status: decision === 'Grant' ? 'Approved Pass' : 'Permission Denied',
+    })
   }
 
   return (
@@ -159,14 +94,12 @@ export default function Leave() {
             </p>
           </div>
         </div>
-        {!isAdminRole && (
-          <button
-            onClick={() => setOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-liquid transition hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4" /> Request Official Outpass
-          </button>
-        )}
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-liquid transition hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" /> Request Official Outpass
+        </button>
       </GlassCard>
 
       {/* Admin Outpass Permission Authorization Portal */}

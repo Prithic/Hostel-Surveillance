@@ -1,49 +1,41 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, User, Lock, Eye, EyeOff, ArrowLeft, ArrowRight } from 'lucide-react'
+import { useNavigate, Navigate } from 'react-router-dom'
+import { ShieldCheck, Lock, Mail, Eye, EyeOff, ArrowLeft, ArrowRight } from 'lucide-react'
 import AnimatedBackground from '../components/AnimatedBackground'
-import { loginAdminUser } from '../services/api'
+import { login } from '../services/guardianApi'
+import { isWardenAuthed } from '../auth'
 
-export default function AdminLogin() {
+export default function WardenLogin() {
   const navigate = useNavigate()
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  if (isWardenAuthed()) {
+    return <Navigate to="/dashboard" replace />
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-
-    const trimmed = username.trim().toLowerCase()
-
-    if (!trimmed || !trimmed.endsWith('@srishakthi.ac.in')) {
-      setError('Please login using your official Sri Shakthi Institute email.')
-      return
-    }
-
-    if (!password || password.length < 8 || password.length > 32) {
-      setError('Incorrect password.')
-      return
-    }
-
     setLoading(true)
-
     try {
-      await loginAdminUser(trimmed, password)
-      setLoading(false)
-      navigate('/security')
+      await login(email.trim(), password)
+      navigate('/dashboard')
     } catch (err) {
+      setError(err.message || 'Invalid credentials')
+    } finally {
       setLoading(false)
-      setError(err.message || 'Incorrect password.')
     }
   }
 
   return (
     <AnimatedBackground>
       <button
+        type="button"
         onClick={() => navigate('/')}
         className="fixed left-6 top-6 z-20 flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-white/70 transition hover:bg-white/10"
       >
@@ -61,20 +53,22 @@ export default function AdminLogin() {
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl liquid-tint-danger text-white shadow-liquid">
               <ShieldCheck className="h-5 w-5" />
             </div>
-            <h1 className="font-display text-xl font-bold text-white tracking-tight">Trinity Engine Admin</h1>
-            <p className="mt-1 text-xs text-white/60">Admin Portal — Official Sri Shakthi Institute Access</p>
+            <h1 className="font-display text-xl font-bold tracking-tight text-white">Trinity Engine</h1>
+            <p className="mt-1 text-xs text-white/60">Sign in with a real account — passwords are hashed in SQLite</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-white/70">Admin Username</label>
+              <label className="mb-1.5 block text-xs font-medium text-white/70">Email</label>
               <div className="liquid-input relative rounded-xl">
-                <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
                 <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin_hostel@srishakthi.ac.in"
+                  type="email"
+                  autoComplete="username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="warden email"
                   className="w-full rounded-xl bg-transparent py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/35 outline-none"
                 />
               </div>
@@ -86,9 +80,11 @@ export default function AdminLogin() {
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
+                  required
+                  placeholder="Password"
                   className="w-full rounded-xl bg-transparent py-2.5 pl-9 pr-9 text-sm text-white placeholder:text-white/35 outline-none"
                 />
                 <button
@@ -109,22 +105,22 @@ export default function AdminLogin() {
               disabled={loading}
               className="flex w-full items-center justify-center gap-2 rounded-xl liquid-tint-danger py-2.5 text-sm font-medium text-white shadow-liquid transition disabled:opacity-70"
             >
-              {loading ? (
-                <motion.span
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
-                  className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white"
-                />
-              ) : (
+              {loading ? 'Signing in…' : (
                 <>
-                  Sign In to Admin Portal <ArrowRight className="h-4 w-4" />
+                  Enter command center <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </motion.button>
           </form>
+
+          <div className="mt-5 space-y-1 rounded-2xl border border-white/10 bg-white/5 p-3 text-[11px] text-white/55">
+            <p className="font-semibold text-white/70">Bootstrap accounts</p>
+            <p>Warden: admin@guardian.ai / Warden@2026</p>
+            <p>Student: student@hostel.local / Student@2026</p>
+            <p>Laundry: laundry@hostel.local / Laundry@2026</p>
+          </div>
         </motion.div>
       </div>
     </AnimatedBackground>
   )
 }
-

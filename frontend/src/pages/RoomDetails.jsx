@@ -1,8 +1,13 @@
+import { useHostel } from '../hostel/HostelContext'
 import GlassCard from '../components/GlassCard'
 import { DoorOpen, Users } from 'lucide-react'
-import { roomInfo, roommates } from '../data/dummyData'
-
 export default function RoomDetails() {
+  const { data, loading, error, append, patchItem, replaceKey } = useHostel()
+  if (loading) return <p className="text-sm text-white/45">Loading live data…</p>
+  if (error) return <p className="text-sm text-danger">{error}</p>
+  if (!data) return null
+  const { roomInfo, roommates } = data
+
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <GlassCard hover={false} className="p-6 lg:col-span-2">

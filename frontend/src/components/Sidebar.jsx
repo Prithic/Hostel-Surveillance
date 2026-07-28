@@ -4,31 +4,43 @@ import {
   LayoutDashboard, DoorOpen, CalendarCheck, FileClock, Megaphone, Wallet,
   MessageSquareWarning, Utensils, Shirt, Search, UserCheck, Siren,
   ClipboardList, Boxes, BarChart3, Settings, LogOut, Building2, ShieldCheck,
+  SlidersHorizontal,
 } from 'lucide-react'
+import { logoutWarden } from '../auth'
+import { useRoleCheck } from '../hooks/useRoleCheck'
+import { navForRole } from '../navAccess'
 
-const nav = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/room-details', label: 'Room Details', icon: DoorOpen },
-  { to: '/attendance', label: 'Attendance', icon: CalendarCheck },
-  { to: '/leave', label: 'Leave', icon: FileClock },
-  { to: '/notices', label: 'Hostel Notices', icon: Megaphone },
-  { to: '/fees', label: 'Fee Status', icon: Wallet },
-  { to: '/complaints', label: 'Complaint Portal', icon: MessageSquareWarning },
-  { to: '/mess', label: 'Mess Management', icon: Utensils },
-  { to: '/laundry', label: 'Laundry', icon: Shirt },
-  { to: '/lost-found', label: 'Lost & Found', icon: Search },
-  { to: '/visitors', label: 'Visitor Management', icon: UserCheck },
-  { to: '/sos', label: 'Emergency SOS', icon: Siren },
-  { to: '/inspection', label: 'Room Inspection', icon: ClipboardList },
-  { to: '/inventory', label: 'Inventory', icon: Boxes },
-  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/security', label: 'Security (GuardianAI)', icon: ShieldCheck },
-  { to: '/settings', label: 'Settings', icon: Settings },
-]
+const ICONS = {
+  '/dashboard': LayoutDashboard,
+  '/room-details': DoorOpen,
+  '/attendance': CalendarCheck,
+  '/leave': FileClock,
+  '/notices': Megaphone,
+  '/fees': Wallet,
+  '/complaints': MessageSquareWarning,
+  '/mess': Utensils,
+  '/laundry': Shirt,
+  '/lost-found': Search,
+  '/visitors': UserCheck,
+  '/sos': Siren,
+  '/inspection': ClipboardList,
+  '/inventory': Boxes,
+  '/analytics': BarChart3,
+  '/security': ShieldCheck,
+  '/config': SlidersHorizontal,
+  '/settings': Settings,
+}
 
-export default function Sidebar({ open, onNavigate }) {
+export default function Sidebar({ open }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { role } = useRoleCheck()
+  const nav = navForRole(role)
+
+  async function handleLogout() {
+    await logoutWarden()
+    navigate('/login')
+  }
 
   return (
     <motion.aside
@@ -48,19 +60,19 @@ export default function Sidebar({ open, onNavigate }) {
             </motion.div>
             <div>
               <span className="font-display block text-base font-extrabold leading-none tracking-tight text-white">Trinity Engine</span>
-              <span className="text-[10px] font-medium text-white/45 uppercase tracking-wider">Smart Hostel OS</span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-white/45">{role || 'Session'}</span>
             </div>
           </div>
         </div>
 
         <nav className="liquid-glass relative flex-1 space-y-0.5 overflow-y-auto rounded-3xl px-2.5 py-3">
-          {nav.map(({ to, label, icon: Icon }) => {
+          {nav.map(({ to, label }) => {
+            const Icon = ICONS[to] || LayoutDashboard
             const active = location.pathname === to
             return (
               <NavLink
                 key={to}
                 to={to}
-                onClick={onNavigate}
                 className="group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors duration-200"
               >
                 {active && (
@@ -82,24 +94,14 @@ export default function Sidebar({ open, onNavigate }) {
           })}
         </nav>
 
-        <div className="liquid-glass relative space-y-0.5 overflow-hidden rounded-3xl p-2.5">
+        <div className="liquid-glass relative overflow-hidden rounded-3xl p-2.5">
           <button
-            onClick={() => navigate('/admin-login')}
-            className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-xs text-white/45 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
-            Admin access
-          </button>
-          <button
-            onClick={() => {
-              localStorage.removeItem('nestos_user')
-              localStorage.removeItem('nestos_jwt_token')
-              navigate('/')
-            }}
+            type="button"
+            onClick={handleLogout}
             className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm text-white/55 transition-colors hover:bg-danger/10 hover:text-danger"
           >
             <LogOut className="h-4 w-4" strokeWidth={1.75} />
-            Logout
+            Sign out
           </button>
         </div>
       </div>

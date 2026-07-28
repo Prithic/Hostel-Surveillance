@@ -154,3 +154,36 @@ class IncidentEngine:
             inc.status = "resolved"
             self._persist(inc)
             return True
+
+    def record_manual(
+        self,
+        *,
+        incident_type: str,
+        severity: str,
+        reason: str,
+        camera_id: str = "manual",
+        metadata: dict | None = None,
+    ) -> StoredIncident:
+        """Warden-triggered event (e.g. SOS) — always opens a new incident."""
+        now = datetime.now(timezone.utc)
+        with self._lock:
+            sid = f"INC-{next(self._seq):05d}"
+            stored = StoredIncident(
+                id=sid,
+                camera_id=camera_id,
+                incident_type=incident_type,
+                severity=severity,
+                reason=reason,
+                timestamp=now.isoformat(),
+                track_ids=[],
+                zone_ids=[],
+                metadata=dict(metadata or {}),
+                status="open",
+                last_seen=now.isoformat(),
+            )
+            self._active[sid] = stored
+            self._history.append(stored)
+            if len(self._history) > 1000:
+                self._history.pop(0)
+            self._persist(stored)
+            return stored

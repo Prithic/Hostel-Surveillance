@@ -1,43 +1,26 @@
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts'
 import {
   CalendarCheck, DoorOpen, MessageSquareWarning, Wallet, Utensils, Shirt,
   FileClock, Siren, Megaphone, Phone, Search, CheckCircle2, Circle,
-  IndianRupee, ArrowUpRight, Download, Sparkles, Edit3, ShieldAlert,
+  IndianRupee, ArrowUpRight, Download, Sparkles, ShieldAlert,
 } from 'lucide-react'
+import { motion } from 'framer-motion'
 import StatCard from '../components/StatCard'
 import GlassCard from '../components/GlassCard'
 import Badge from '../components/Badge'
-import AdminEditModal from '../components/AdminEditModal'
 import { exportToCSV } from '../utils/exportCSV'
-import {
-  statSummary, notices, events, complaints, attendanceTrend,
-  roomInfo, roommates, feeStatus, todayMenu, mealTimings,
-  laundryTracking, emergencyContacts, lostAndFoundItems,
-} from '../data/dummyData'
+import { useHostel } from '../hostel/HostelContext'
 
 const quickActions = [
-  { label: 'Apply Leave', icon: FileClock, path: '/leave', tone: 'liquid-tint-primary' },
-  { label: 'Raise Complaint', icon: MessageSquareWarning, path: '/complaints', tone: 'liquid-tint-warning' },
-  { label: 'Book Laundry', icon: Shirt, path: '/laundry', tone: 'liquid-tint-primary' },
-  { label: 'Emergency SOS', icon: Siren, path: '/sos', tone: 'liquid-tint-danger' },
-  { label: 'View Menu', icon: Utensils, path: '/mess', tone: 'liquid-tint-success' },
+  { label: 'Security (GuardianAI)', icon: ShieldAlert, path: '/security', tone: 'liquid-tint-danger' },
+  { label: 'Live analytics', icon: Sparkles, path: '/analytics', tone: 'liquid-tint-primary' },
+  { label: 'Raise SOS', icon: Siren, path: '/sos', tone: 'liquid-tint-danger' },
 ]
 
 const complaintTone = { Pending: 'warning', 'In Progress': 'info', Completed: 'success' }
 
 const laundrySteps = ['Booked', 'Washing', 'Ready', 'Picked Up']
-
-const menuRows = [
-  { label: 'Breakfast', value: todayMenu.breakfast, time: mealTimings.breakfast },
-  { label: 'Lunch', value: todayMenu.lunch, time: mealTimings.lunch },
-  { label: 'Snacks', value: todayMenu.snacks, time: mealTimings.snacks },
-  { label: 'Dinner', value: todayMenu.dinner, time: mealTimings.dinner },
-]
-
-import { useRoleCheck } from '../hooks/useRoleCheck'
 
 const container = {
   hidden: {},
@@ -50,31 +33,56 @@ const item = {
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { isAdminRole } = useRoleCheck()
-  const [adminEditOpen, setAdminEditOpen] = useState(false)
+  const { data, loading, error } = useHostel()
+
+  if (loading) return <p className="text-sm text-white/45">Loading live hostel data…</p>
+  if (error) return <p className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p>
+  if (!data) return null
+
+  const {
+    statSummary, notices, events, complaints, attendanceTrend,
+    feeStatus, todayMenu, mealTimings, laundryTracking, emergencyContacts, lostAndFoundItems,
+    roomInfo, roommates,
+  } = data
+
+  const menuRows = [
+    { label: 'Breakfast', value: todayMenu.breakfast, time: mealTimings.breakfast },
+    { label: 'Lunch', value: todayMenu.lunch, time: mealTimings.lunch },
+    { label: 'Snacks', value: todayMenu.snacks, time: mealTimings.snacks },
+    { label: 'Dinner', value: todayMenu.dinner, time: mealTimings.dinner },
+  ]
+
   const currentLaundryIdx = laundrySteps.indexOf(laundryTracking[0]?.status)
   const feePct = Math.round((feeStatus.paid / (feeStatus.paid + feeStatus.pending || 1)) * 100)
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
+      <div className="rounded-2xl border border-success/25 bg-success/10 px-4 py-3 text-xs text-white/80">
+        <span className="font-semibold text-success">Live</span> hostel data from Guardian SQLite.
+        CCTV incidents stay on{" "}
+        <button type="button" onClick={() => navigate("/security")} className="underline text-white">
+          Security (GuardianAI)
+        </button>
+        .
+      </div>
       {/* Stats */}
       <motion.div variants={item} className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-        <div onClick={() => navigate('/attendance')} className="cursor-pointer transition hover:scale-[1.02]">
+        <div onClick={() => navigate('/dashboard')} className="cursor-pointer transition hover:scale-[1.02]">
           <StatCard icon={CalendarCheck} label="Attendance" value={`${statSummary.attendance}%`} tone="success" />
         </div>
-        <div onClick={() => navigate('/room-details')} className="cursor-pointer transition hover:scale-[1.02]">
+        <div onClick={() => navigate('/dashboard')} className="cursor-pointer transition hover:scale-[1.02]">
           <StatCard icon={DoorOpen} label="Room Number" value={statSummary.room} tone="primary" />
         </div>
-        <div onClick={() => navigate('/complaints')} className="cursor-pointer transition hover:scale-[1.02]">
+        <div onClick={() => navigate('/dashboard')} className="cursor-pointer transition hover:scale-[1.02]">
           <StatCard icon={MessageSquareWarning} label="Pending Complaints" value={statSummary.pendingComplaints} tone="warning" />
         </div>
-        <div onClick={() => navigate('/fees')} className="cursor-pointer transition hover:scale-[1.02]">
+        <div onClick={() => navigate('/dashboard')} className="cursor-pointer transition hover:scale-[1.02]">
           <StatCard icon={Wallet} label="Fee Status" value={statSummary.feeStatus} tone="success" />
         </div>
-        <div onClick={() => navigate('/mess')} className="cursor-pointer transition hover:scale-[1.02]">
+        <div onClick={() => navigate('/dashboard')} className="cursor-pointer transition hover:scale-[1.02]">
           <StatCard icon={Utensils} label="Today's Menu" value={statSummary.todayMenu} tone="primary" />
         </div>
-        <div onClick={() => navigate('/laundry')} className="cursor-pointer transition hover:scale-[1.02]">
+        <div onClick={() => navigate('/dashboard')} className="cursor-pointer transition hover:scale-[1.02]">
           <StatCard icon={Shirt} label="Laundry Status" value={statSummary.laundryStatus} tone="warning" />
         </div>
       </motion.div>
@@ -85,14 +93,6 @@ export default function Dashboard() {
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-display text-sm font-semibold text-white">Quick actions</h2>
             <div className="flex items-center gap-2">
-              {isAdminRole && (
-                <button
-                  onClick={() => setAdminEditOpen(true)}
-                  className="flex items-center gap-1.5 rounded-xl bg-amber-500/20 border border-amber-500/30 px-3 py-1.5 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/30"
-                >
-                  <Edit3 className="h-3.5 w-3.5" /> Admin Master Edit
-                </button>
-              )}
               <button
                 onClick={() =>
                   exportToCSV('trinity_dashboard_summary', [
@@ -211,7 +211,7 @@ export default function Dashboard() {
                 <DoorOpen className="h-4 w-4 text-primary" />
                 <h3 className="font-display text-sm font-semibold text-white">Room & roommates</h3>
               </div>
-              <button onClick={() => navigate('/room-details')} className="text-white/45 hover:text-primary">
+              <button onClick={() => navigate('/dashboard')} className="text-white/45 hover:text-primary">
                 <ArrowUpRight className="h-4 w-4" />
               </button>
             </div>
@@ -240,7 +240,7 @@ export default function Dashboard() {
                 <Wallet className="h-4 w-4 text-success" />
                 <h3 className="font-display text-sm font-semibold text-white">Fee overview</h3>
               </div>
-              <button onClick={() => navigate('/fees')} className="text-white/45 hover:text-primary">
+              <button onClick={() => navigate('/dashboard')} className="text-white/45 hover:text-primary">
                 <ArrowUpRight className="h-4 w-4" />
               </button>
             </div>
@@ -268,7 +268,7 @@ export default function Dashboard() {
                 <Utensils className="h-4 w-4 text-primary" />
                 <h3 className="font-display text-sm font-semibold text-white">Today's full menu</h3>
               </div>
-              <button onClick={() => navigate('/mess')} className="text-white/45 hover:text-primary">
+              <button onClick={() => navigate('/dashboard')} className="text-white/45 hover:text-primary">
                 <ArrowUpRight className="h-4 w-4" />
               </button>
             </div>
@@ -292,7 +292,7 @@ export default function Dashboard() {
                 <Shirt className="h-4 w-4 text-warning" />
                 <h3 className="font-display text-sm font-semibold text-white">Laundry tracker</h3>
               </div>
-              <button onClick={() => navigate('/laundry')} className="text-white/45 hover:text-primary">
+              <button onClick={() => navigate('/dashboard')} className="text-white/45 hover:text-primary">
                 <ArrowUpRight className="h-4 w-4" />
               </button>
             </div>
@@ -343,7 +343,7 @@ export default function Dashboard() {
                 <Search className="h-4 w-4 text-primary" />
                 <h3 className="font-display text-sm font-semibold text-white">Lost & found</h3>
               </div>
-              <button onClick={() => navigate('/lost-found')} className="text-white/45 hover:text-primary">
+              <button onClick={() => navigate('/dashboard')} className="text-white/45 hover:text-primary">
                 <ArrowUpRight className="h-4 w-4" />
               </button>
             </div>
@@ -362,7 +362,6 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-      <AdminEditModal open={adminEditOpen} onClose={() => setAdminEditOpen(false)} />
     </motion.div>
   )
 }

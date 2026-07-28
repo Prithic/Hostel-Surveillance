@@ -6,10 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Trinity Engine ERP API (Express)
-      '/api/auth': { target: 'http://127.0.0.1:5000', changeOrigin: true },
+      // Trinity Engine ERP (only if using relative /api/auth — services/api.js uses :5000 directly)
       '/api/data': { target: 'http://127.0.0.1:5000', changeOrigin: true },
-      // GuardianAI Python (security stream + incidents)
+      // GuardianAI Python — keep auth/stream/incidents on :8000
+      '/api/auth': { target: 'http://127.0.0.1:8000', changeOrigin: true },
       '/api/stream': { target: 'http://127.0.0.1:8000', changeOrigin: true },
       '/api/incidents': { target: 'http://127.0.0.1:8000', changeOrigin: true },
       '/api/alerts': { target: 'http://127.0.0.1:8000', changeOrigin: true },
@@ -17,6 +17,7 @@ export default defineConfig({
       '/api/analytics': { target: 'http://127.0.0.1:8000', changeOrigin: true },
       '/api/chat': { target: 'http://127.0.0.1:8000', changeOrigin: true },
       '/api/config': { target: 'http://127.0.0.1:8000', changeOrigin: true },
+      '/api/health': { target: 'http://127.0.0.1:8000', changeOrigin: true },
       '/health': { target: 'http://127.0.0.1:8000', changeOrigin: true },
       '/ws': { target: 'ws://127.0.0.1:8000', ws: true },
     },

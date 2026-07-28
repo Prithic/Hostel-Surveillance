@@ -4,40 +4,53 @@ import {
   LayoutDashboard, DoorOpen, CalendarCheck, FileClock, Megaphone, Wallet,
   MessageSquareWarning, Utensils, Shirt, Search, UserCheck, Siren,
   ClipboardList, Boxes, BarChart3, Settings, LogOut, Building2, X, ShieldCheck,
+  SlidersHorizontal,
 } from 'lucide-react'
+import { logoutWarden } from '../auth'
+import { useRoleCheck } from '../hooks/useRoleCheck'
+import { navForRole } from '../navAccess'
 
-const nav = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/room-details', label: 'Room Details', icon: DoorOpen },
-  { to: '/attendance', label: 'Attendance', icon: CalendarCheck },
-  { to: '/leave', label: 'Leave', icon: FileClock },
-  { to: '/notices', label: 'Hostel Notices', icon: Megaphone },
-  { to: '/fees', label: 'Fee Status', icon: Wallet },
-  { to: '/complaints', label: 'Complaint Portal', icon: MessageSquareWarning },
-  { to: '/mess', label: 'Mess Management', icon: Utensils },
-  { to: '/laundry', label: 'Laundry', icon: Shirt },
-  { to: '/lost-found', label: 'Lost & Found', icon: Search },
-  { to: '/visitors', label: 'Visitor Management', icon: UserCheck },
-  { to: '/sos', label: 'Emergency SOS', icon: Siren },
-  { to: '/inspection', label: 'Room Inspection', icon: ClipboardList },
-  { to: '/inventory', label: 'Inventory', icon: Boxes },
-  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/security', label: 'Security (GuardianAI)', icon: ShieldCheck },
-  { to: '/settings', label: 'Settings', icon: Settings },
-]
+const ICONS = {
+  '/dashboard': LayoutDashboard,
+  '/room-details': DoorOpen,
+  '/attendance': CalendarCheck,
+  '/leave': FileClock,
+  '/notices': Megaphone,
+  '/fees': Wallet,
+  '/complaints': MessageSquareWarning,
+  '/mess': Utensils,
+  '/laundry': Shirt,
+  '/lost-found': Search,
+  '/visitors': UserCheck,
+  '/sos': Siren,
+  '/inspection': ClipboardList,
+  '/inventory': Boxes,
+  '/analytics': BarChart3,
+  '/security': ShieldCheck,
+  '/config': SlidersHorizontal,
+  '/settings': Settings,
+}
 
-// Slide-in liquid glass drawer for small screens — mirrors the desktop
-// Sidebar but overlays the content with a blurred scrim behind it.
 export default function MobileDrawer({ open, onClose }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { role } = useRoleCheck()
+  const nav = navForRole(role)
+
+  async function handleLogout() {
+    await logoutWarden()
+    onClose()
+    navigate('/login')
+  }
 
   return (
     <AnimatePresence>
       {open && (
         <>
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={onClose}
             className="fixed inset-0 z-40 bg-ink/50 md:hidden"
           />
@@ -46,7 +59,7 @@ export default function MobileDrawer({ open, onClose }) {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -300, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-            className="fixed left-3 top-3 bottom-3 z-50 w-[82vw] max-w-[280px] md:hidden"
+            className="fixed bottom-3 left-3 top-3 z-50 w-[82vw] max-w-[280px] md:hidden"
           >
             <div className="liquid-glass flex h-full flex-col gap-3 overflow-hidden rounded-3xl p-3">
               <div className="flex items-center justify-between px-2 pt-1">
@@ -54,15 +67,19 @@ export default function MobileDrawer({ open, onClose }) {
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl liquid-tint-primary text-white">
                     <Building2 className="h-4 w-4" />
                   </div>
-                  <span className="font-display text-base font-extrabold text-white">Trinity Engine</span>
+                  <div>
+                    <span className="font-display block text-base font-extrabold text-white">Trinity Engine</span>
+                    <span className="text-[10px] uppercase tracking-wider text-white/45">{role || 'Session'}</span>
+                  </div>
                 </div>
-                <button onClick={onClose} className="rounded-full p-1.5 text-white/55 hover:bg-white/10">
+                <button type="button" onClick={onClose} className="rounded-full p-1.5 text-white/55 hover:bg-white/10">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               <nav className="flex-1 space-y-0.5 overflow-y-auto px-1 py-2">
-                {nav.map(({ to, label, icon: Icon }) => {
+                {nav.map(({ to, label }) => {
+                  const Icon = ICONS[to] || LayoutDashboard
                   const active = location.pathname === to
                   return (
                     <NavLink
@@ -81,16 +98,11 @@ export default function MobileDrawer({ open, onClose }) {
               </nav>
 
               <button
-                onClick={() => {
-                  onClose()
-                  localStorage.removeItem('nestos_user')
-                  localStorage.removeItem('nestos_jwt_token')
-                  navigate('/')
-                }}
-                className="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm text-white/55 hover:bg-danger/10 hover:text-danger"
+                type="button"
+                onClick={handleLogout}
+                className="flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-white/55 hover:bg-danger/10 hover:text-danger"
               >
-                <LogOut className="h-4 w-4" strokeWidth={1.75} />
-                Logout
+                <LogOut className="h-4 w-4" /> Sign out
               </button>
             </div>
           </motion.div>

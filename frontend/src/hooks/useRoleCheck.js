@@ -1,23 +1,28 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { getRole, me } from '../services/guardianApi'
+
+const ADMIN_ROLES = ['Admin', 'Super Admin', 'Chief Warden', 'Warden']
+const LAUNDRY_ROLES = [...ADMIN_ROLES, 'Laundry Staff']
 
 export function useRoleCheck() {
-  const [role, setRole] = useState('')
+  const [role, setRole] = useState(() => getRole())
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('nestos_user')
-      if (stored && stored !== 'undefined') {
-        const u = JSON.parse(stored)
-        setRole(u?.role || 'Student')
-      } else {
-        setRole('Student')
-      }
-    } catch (e) {
-      setRole('Student')
+    let cancelled = false
+    me()
+      .then((u) => {
+        if (!cancelled) setRole(u?.role || getRole() || 'Student')
+      })
+      .catch(() => {
+        if (!cancelled) setRole(getRole() || 'Student')
+      })
+    return () => {
+      cancelled = true
     }
   }, [])
 
-  const isAdminRole = ['Admin', 'Super Admin', 'Chief Warden', 'Warden'].includes(role)
+  const isAdminRole = ADMIN_ROLES.includes(role)
+  const isLaundryStaff = LAUNDRY_ROLES.includes(role)
 
-  return { role, isAdminRole }
+  return { role, isAdminRole, isLaundryStaff }
 }

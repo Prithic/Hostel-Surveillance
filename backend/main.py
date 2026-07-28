@@ -20,7 +20,8 @@ from ai.alerts import AlertEngine
 from ai.config import AIConfig
 from ai.incidents import IncidentEngine, StoredIncident
 from ai.pipeline import GuardianPipeline
-from backend.auth import Session, auth_service, require_warden
+from backend.auth import Session, auth_service, require_role, require_warden
+from backend.hostel import HostelStore
 from backend.store import IncidentStore
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,9 +43,43 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=200)
 
 
+class HostelAppendRequest(BaseModel):
+    key: str = Field(min_length=1, max_length=64)
+    item: dict[str, Any]
+
+
+class HostelPatchRequest(BaseModel):
+    key: str = Field(min_length=1, max_length=64)
+    id: str = Field(min_length=1, max_length=64)
+    updates: dict[str, Any]
+
+
+class HostelReplaceRequest(BaseModel):
+    key: str = Field(min_length=1, max_length=64)
+    value: Any
+
+
+class SosRequest(BaseModel):
+    note: str = Field(default="", max_length=500)
+    location: str = Field(default="Hostel campus", max_length=200)
+
+
+class ConfigUpdateRequest(BaseModel):
+    confidence_threshold: float | None = Field(default=None, ge=0.05, le=0.99)
+    crowd_threshold: int | None = Field(default=None, ge=1, le=100)
+    night_start_hour: int | None = Field(default=None, ge=0, le=23)
+    night_end_hour: int | None = Field(default=None, ge=0, le=23)
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=200)
+    new_password: str = Field(min_length=8, max_length=200)
+
+
 class Hub:
     def __init__(self) -> None:
         self.store = IncidentStore()
+        self.hostel = HostelStore(path=self.store.path)
         self.incidents = IncidentEngine(store=self.store)
         self.alerts = AlertEngine()
         self.pipeline: GuardianPipeline | None = None
@@ -117,9 +152,14 @@ async def lifespan(app: FastAPI):
     hub._loop = asyncio.get_running_loop()
     hub.alerts.subscribe(_on_alert)
     zones = ROOT / "datasets" / "zones" / "default_zones.json"
-    model = ROOT / "models" / "custom" / "yolov8s_v4_production.pt"
+    # Custom hostel weights miss many webcam/close-up frames (class "item", low recall).
+    # Prefer COCO yolov8n for live demo; override with GUARDIAN_MODEL=.../yolov8s_v4_production.pt
+    env_model = os.environ.get("GUARDIAN_MODEL", "").strip()
+    model = Path(env_model) if env_model else ROOT / "models" / "yolov8n.pt"
     if not model.is_file():
-        model = ROOT / "models" / "yolov8n.pt"
+        model = ROOT / "models" / "custom" / "yolov8s_v4_production.pt"
+    if not model.is_file():
+        model = Path("yolov8n.pt")
     cfg = AIConfig(
         source=_parse_source(os.environ.get("GUARDIAN_SOURCE", "0")),
         model_path=model,
@@ -148,6 +188,8 @@ app.add_middleware(
     allow_origins=[
         "http://127.0.0.1:5173",
         "http://localhost:5173",
+        "http://127.0.0.1:5174",
+        "http://localhost:5174",
         "http://127.0.0.1:4173",
         "http://localhost:4173",
     ],
@@ -174,7 +216,14 @@ def api_login(body: LoginRequest, response: Response) -> dict[str, Any]:
         max_age=auth_service.ttl_seconds,
     )
     hub.store.audit("login", session.email)
-    return {"token": session.token, "email": session.email, "role": session.role}
+    return {
+        "token": session.token,
+        "email": session.email,
+        "role": session.role,
+        "name": session.name,
+        "room": session.room,
+        "student_id": session.student_id,
+    }
 
 
 @app.post("/api/auth/logout")
@@ -187,7 +236,28 @@ def api_logout(response: Response, session: Session = Depends(require_warden)) -
 
 @app.get("/api/auth/me")
 def api_me(session: Session = Depends(require_warden)) -> dict[str, str]:
-    return {"email": session.email, "role": session.role}
+    return {
+        "email": session.email,
+        "role": session.role,
+        "name": session.name,
+        "room": session.room,
+        "student_id": session.student_id,
+    }
+
+
+@app.get("/api/auth/users")
+def api_users(_session: Session = Depends(require_role("Warden"))) -> list[dict]:
+    return auth_service.users.list_users()
+
+
+@app.post("/api/auth/password")
+def api_change_password(body: PasswordChangeRequest, session: Session = Depends(require_warden)) -> dict[str, str]:
+    if auth_service.users.authenticate(session.email, body.current_password) is None:
+        raise HTTPException(status_code=400, detail="Current password is wrong")
+    if not auth_service.users.set_password(session.email, body.new_password):
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    hub.store.audit("password_change", session.email)
+    return {"status": "ok"}
 
 
 @app.get("/health")
@@ -226,14 +296,14 @@ def api_health(_session: Session = Depends(require_warden)) -> dict[str, Any]:
 
 
 @app.get("/api/incidents")
-def api_incidents(limit: int = 50, _session: Session = Depends(require_warden)) -> list[dict[str, Any]]:
+def api_incidents(limit: int = 50, _session: Session = Depends(require_role("Warden"))) -> list[dict[str, Any]]:
     return [i.to_dict() for i in hub.incidents.list_incidents(limit=_clamp_limit(limit))]
 
 
 @app.patch("/api/incidents/{incident_id}")
 def api_resolve_incident(
     incident_id: str,
-    session: Session = Depends(require_warden),
+    session: Session = Depends(require_role("Warden")),
 ) -> dict[str, Any]:
     ok = hub.incidents.resolve(incident_id)
     if not ok:
@@ -243,12 +313,12 @@ def api_resolve_incident(
 
 
 @app.get("/api/alerts")
-def api_alerts(limit: int = 50, _session: Session = Depends(require_warden)) -> list[dict[str, Any]]:
+def api_alerts(limit: int = 50, _session: Session = Depends(require_role("Warden"))) -> list[dict[str, Any]]:
     return [i.to_dict() for i in hub.alerts.recent(limit=_clamp_limit(limit))]
 
 
 @app.get("/api/analytics")
-def api_analytics(_session: Session = Depends(require_warden)) -> dict[str, Any]:
+def api_analytics(_session: Session = Depends(require_role("Warden"))) -> dict[str, Any]:
     all_incidents = hub.incidents.list_incidents(limit=500)
     open_ones = hub.incidents.list_open()
     st = hub.pipeline.status if hub.pipeline else None
@@ -368,7 +438,7 @@ def api_chat(body: ChatRequest, _session: Session = Depends(require_warden)) -> 
 
 
 @app.get("/api/config")
-def api_config(_session: Session = Depends(require_warden)) -> dict[str, Any]:
+def api_config(_session: Session = Depends(require_role("Warden"))) -> dict[str, Any]:
     cfg = hub.pipeline.config if hub.pipeline else None
     if cfg is None:
         return {}
@@ -382,6 +452,168 @@ def api_config(_session: Session = Depends(require_warden)) -> dict[str, Any]:
         "model_path": str(cfg.model_path),
         "source": str(cfg.source),
     }
+
+
+@app.put("/api/config")
+def api_config_update(body: ConfigUpdateRequest, session: Session = Depends(require_role("Warden"))) -> dict[str, Any]:
+    if hub.pipeline is None:
+        raise HTTPException(status_code=503, detail="Pipeline not started")
+    cfg = hub.pipeline.update_runtime(
+        confidence_threshold=body.confidence_threshold,
+        crowd_threshold=body.crowd_threshold,
+        night_start_hour=body.night_start_hour,
+        night_end_hour=body.night_end_hour,
+    )
+    hub.store.audit("config_update", f"by {session.email}")
+    return {
+        "camera_id": cfg.camera_id,
+        "confidence_threshold": cfg.confidence_threshold,
+        "crowd_threshold": cfg.crowd_threshold,
+        "night_start_hour": cfg.night_start_hour,
+        "night_end_hour": cfg.night_end_hour,
+        "device": cfg.device,
+        "model_path": str(cfg.model_path),
+        "source": str(cfg.source),
+    }
+
+
+def _role_ok(session: Session, *roles: str) -> bool:
+    return session.role in roles
+
+
+def _deny_unless(session: Session, *roles: str) -> None:
+    if not _role_ok(session, *roles):
+        raise HTTPException(status_code=403, detail=f"Requires role: {', '.join(roles)}")
+
+
+@app.get("/api/hostel/state")
+def hostel_state(_session: Session = Depends(require_warden)) -> dict[str, Any]:
+    return hub.hostel.get()
+
+
+@app.post("/api/hostel/append")
+def hostel_append(body: HostelAppendRequest, session: Session = Depends(require_warden)) -> dict[str, Any]:
+    # Who may create which records
+    append_roles = {
+        "complaints": ("Warden", "Student"),
+        "leaveRequests": ("Warden", "Student"),
+        "visitors": ("Warden",),
+        "lostAndFoundItems": ("Warden", "Student", "Laundry Staff"),
+        "notices": ("Warden",),
+        "events": ("Warden",),
+        "inspections": ("Warden",),
+        "laundryTracking": ("Warden", "Student", "Laundry Staff"),
+        "laundryClaims": ("Warden", "Student", "Laundry Staff"),
+        "messFeedback": ("Warden", "Student"),
+        "sosEvents": ("Warden", "Student", "Laundry Staff"),
+        "paymentHistory": ("Warden",),
+        "notifications": ("Warden",),
+    }
+    roles = append_roles.get(body.key)
+    if roles is None:
+        raise HTTPException(status_code=400, detail=f"Cannot append to {body.key}")
+    _deny_unless(session, *roles)
+    item = hub.hostel.append(body.key, body.item)
+    if body.key == "complaints":
+        hub.hostel.push_notification("New complaint", f"{item.get('category')}: {item.get('id')}", "warning")
+    elif body.key == "leaveRequests":
+        hub.hostel.push_notification("Outpass request", f"{item.get('studentName')} · {item.get('id')}", "info")
+    elif body.key == "laundryClaims":
+        hub.hostel.push_notification("Laundry claim", f"{item.get('item')} · {item.get('id')}", "warning")
+    elif body.key == "notices":
+        hub.hostel.push_notification("Notice posted", str(item.get("title") or item.get("id")), "info")
+    hub.store.audit("hostel_append", f"{body.key} by {session.email}")
+    return item
+
+
+@app.patch("/api/hostel/item")
+def hostel_patch(body: HostelPatchRequest, session: Session = Depends(require_warden)) -> dict[str, Any]:
+    patch_roles = {
+        "complaints": ("Warden",),
+        "leaveRequests": ("Warden",),
+        "visitors": ("Warden",),
+        "lostAndFoundItems": ("Warden", "Laundry Staff"),
+        "laundryTracking": ("Warden", "Laundry Staff"),
+        "laundryClaims": ("Warden", "Laundry Staff"),
+        "sosEvents": ("Warden",),
+        "attendanceRoster": ("Warden",),
+        "inventory": ("Warden",),
+        "notifications": ("Warden", "Student", "Laundry Staff"),
+        "inspections": ("Warden",),
+    }
+    roles = patch_roles.get(body.key)
+    if roles is None:
+        raise HTTPException(status_code=400, detail=f"Cannot patch {body.key}")
+    _deny_unless(session, *roles)
+    updated = hub.hostel.patch_list_item(body.key, body.id, body.updates)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    if body.key == "leaveRequests" and body.updates.get("status"):
+        hub.hostel.push_notification(
+            "Outpass updated",
+            f"{updated.get('id')}: {body.updates.get('status')}",
+            "info",
+        )
+    if body.key == "complaints" and body.updates.get("status"):
+        hub.hostel.push_notification(
+            "Complaint updated",
+            f"{updated.get('id')}: {body.updates.get('status')}",
+            "info",
+        )
+    hub.store.audit("hostel_patch", f"{body.key}/{body.id} by {session.email}")
+    return updated
+
+
+@app.put("/api/hostel/key")
+def hostel_replace(body: HostelReplaceRequest, session: Session = Depends(require_warden)) -> dict[str, Any]:
+    replace_roles = {
+        "notificationPrefs": ("Warden", "Student", "Laundry Staff"),
+        "todayMenu": ("Warden",),
+        "mealTimings": ("Warden",),
+        "mealPlan": ("Warden", "Student"),
+        "feeStatus": ("Warden",),
+        "statSummary": ("Warden",),
+        "currentUser": ("Warden", "Student", "Laundry Staff"),
+        "nextInspection": ("Warden",),
+        "attendanceRoster": ("Warden",),
+        "analytics": ("Warden", "Student"),
+    }
+    roles = replace_roles.get(body.key)
+    if roles is None:
+        raise HTTPException(status_code=400, detail=f"Cannot replace {body.key}")
+    _deny_unless(session, *roles)
+    value = hub.hostel.replace_key(body.key, body.value)
+    hub.store.audit("hostel_replace", f"{body.key} by {session.email}")
+    return {"key": body.key, "value": value}
+
+
+@app.post("/api/hostel/sos")
+async def hostel_sos(body: SosRequest, session: Session = Depends(require_warden)) -> dict[str, Any]:
+    """Persist SOS + raise a critical alert into the live incident/alert stream."""
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc).isoformat()
+    event = {
+        "id": f"SOS-{int(time.time())}",
+        "note": body.note or "Warden/student SOS triggered",
+        "location": body.location,
+        "by": session.email,
+        "at": now,
+        "status": "open",
+    }
+    hub.hostel.append("sosEvents", event)
+    hub.hostel.push_notification("SOS ALERT", f"{event['location']}: {event['note']}", "critical")
+    incident = hub.incidents.record_manual(
+        incident_type="emergency_sos",
+        severity="critical",
+        reason=f"SOS: {event['note']} @ {event['location']}",
+        camera_id="manual-sos",
+        metadata={"source": "sos", "by": session.email, "sos_id": event["id"]},
+    )
+    hub.alerts.publish(incident)
+    hub.store.audit("sos", f"{event['id']} by {session.email}")
+    await hub.broadcast({"type": "alert", "incident": incident.to_dict()})
+    return {"event": event, "incident": incident.to_dict()}
 
 
 @app.websocket("/ws/alerts")

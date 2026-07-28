@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Sequence
@@ -97,6 +97,31 @@ class GuardianPipeline:
         self._stream = OpenCVVideoStream(self.config.source)
         self._stream.open()
         self.status.online = True
+
+    def update_runtime(
+        self,
+        *,
+        confidence_threshold: float | None = None,
+        crowd_threshold: int | None = None,
+        night_start_hour: int | None = None,
+        night_end_hour: int | None = None,
+    ) -> AIConfig:
+        """Hot-swap rule/detection thresholds without restarting the camera."""
+        kwargs: dict = {}
+        if confidence_threshold is not None:
+            kwargs["confidence_threshold"] = confidence_threshold
+        if crowd_threshold is not None:
+            kwargs["crowd_threshold"] = crowd_threshold
+        if night_start_hour is not None:
+            kwargs["night_start_hour"] = night_start_hour
+        if night_end_hour is not None:
+            kwargs["night_end_hour"] = night_end_hour
+        if not kwargs:
+            return self.config
+        self.config = replace(self.config, **kwargs)
+        if confidence_threshold is not None:
+            self._tracker._confidence = float(confidence_threshold)
+        return self.config
 
     def close(self) -> None:
         if self._stream is not None:

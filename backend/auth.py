@@ -1,9 +1,7 @@
-"""Warden session auth — token in memory + optional cookie. Stdlib only."""
+"""Session auth backed by UserStore (PBKDF2). Stdlib only."""
 
 from __future__ import annotations
 
-import hashlib
-import hmac
 import os
 import secrets
 import threading
@@ -13,6 +11,8 @@ from dataclasses import dataclass
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from backend.users import UserStore
+
 _bearer = HTTPBearer(auto_error=False)
 
 
@@ -21,6 +21,9 @@ class Session:
     token: str
     email: str
     role: str
+    name: str
+    room: str
+    student_id: str
     expires_at: float
 
 
@@ -28,21 +31,21 @@ class AuthService:
     def __init__(self) -> None:
         self._sessions: dict[str, Session] = {}
         self._lock = threading.Lock()
-        self.admin_email = os.environ.get("GUARDIAN_ADMIN_EMAIL", "admin@guardian.ai")
-        # ponytail: demo default — override via env for real events
-        self.admin_password = os.environ.get("GUARDIAN_ADMIN_PASSWORD", "Warden@2026")
+        self.users = UserStore()
         self.ttl_seconds = int(os.environ.get("GUARDIAN_SESSION_TTL", "28800"))
 
     def login(self, email: str, password: str) -> Session | None:
-        if not hmac.compare_digest(email.strip(), self.admin_email):
-            return None
-        if not hmac.compare_digest(password, self.admin_password):
+        user = self.users.authenticate(email, password)
+        if user is None:
             return None
         token = secrets.token_urlsafe(32)
         session = Session(
             token=token,
-            email=self.admin_email,
-            role="warden",
+            email=user.email,
+            role=user.role,
+            name=user.name,
+            room=user.room,
+            student_id=user.student_id,
             expires_at=time.time() + self.ttl_seconds,
         )
         with self._lock:
@@ -85,6 +88,10 @@ def require_warden(
     return auth_service.validate(_token_from_request(request, creds))
 
 
-def password_fingerprint() -> str:
-    """Non-reversible hint for health/debug — not the password."""
-    return hashlib.sha256(auth_service.admin_password.encode()).hexdigest()[:8]
+def require_role(*roles: str):
+    def _dep(session: Session = Depends(require_warden)) -> Session:
+        if roles and session.role not in roles:
+            raise HTTPException(status_code=403, detail=f"Requires role: {', '.join(roles)}")
+        return session
+
+    return _dep

@@ -1,116 +1,87 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
-import { Camera, ShieldAlert, Activity, Video, LogOut, RefreshCw } from 'lucide-react'
+import { Camera, ShieldAlert, Activity, Video, RefreshCw } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
 import StatCard from '../components/StatCard'
 import Badge from '../components/Badge'
-import { logoutAdmin } from '../auth'
-
-const GUARDIAN_API = import.meta.env.VITE_GUARDIAN_API_URL || ''
-const GUARDIAN_EMAIL = import.meta.env.VITE_GUARDIAN_ADMIN_EMAIL || 'admin@guardian.ai'
-const GUARDIAN_PASSWORD = import.meta.env.VITE_GUARDIAN_ADMIN_PASSWORD || 'Warden@2026'
-
-async function guardianLogin() {
-  const res = await fetch(`${GUARDIAN_API}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ email: GUARDIAN_EMAIL, password: GUARDIAN_PASSWORD }),
-  })
-  if (!res.ok) throw new Error('Guardian auth failed')
-  const data = await res.json()
-  sessionStorage.setItem('guardian_token', data.token)
-  return data.token
-}
-
-function authHeaders() {
-  const token = sessionStorage.getItem('guardian_token') || ''
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
-
-async function guardianGet(path) {
-  let res = await fetch(`${GUARDIAN_API}${path}`, { credentials: 'include', headers: authHeaders() })
-  if (res.status === 401) {
-    await guardianLogin()
-    res = await fetch(`${GUARDIAN_API}${path}`, { credentials: 'include', headers: authHeaders() })
-  }
-  if (!res.ok) throw new Error(`api ${res.status}`)
-  return res.json()
-}
-
-async function guardianPatch(path) {
-  let res = await fetch(`${GUARDIAN_API}${path}`, {
-    method: 'PATCH',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-  })
-  if (res.status === 401) {
-    await guardianLogin()
-    res = await fetch(`${GUARDIAN_API}${path}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    })
-  }
-  if (!res.ok) throw new Error(`api ${res.status}`)
-  return res.json()
-}
+import { alertsWsUrl, apiGet, apiPatch, streamUrl } from '../services/guardianApi'
 
 const levelTone = { critical: 'danger', high: 'danger', medium: 'warning', low: 'info' }
 
 export default function SecurityDashboard() {
-  const navigate = useNavigate()
-  const streamSrc = `${GUARDIAN_API}/api/stream`
   const [status, setStatus] = useState(null)
   const [incidents, setIncidents] = useState([])
+  const [liveAlert, setLiveAlert] = useState(null)
+  const [wsState, setWsState] = useState('connecting')
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(null)
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     try {
       const [st, inc] = await Promise.all([
-        guardianGet('/api/status'),
-        guardianGet('/api/incidents?limit=20'),
+        apiGet('/api/status'),
+        apiGet('/api/incidents?limit=30'),
       ])
       setStatus(st)
       setIncidents(Array.isArray(inc) ? inc : [])
       setError('')
     } catch (e) {
       setError(e.message || 'Backend unreachable')
+    } finally {
+      setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
+    refresh()
+    // Status (FPS/people) needs a light poll; incidents primarily via WS.
+    const t = setInterval(refresh, 8000)
+    return () => clearInterval(t)
+  }, [refresh])
+
+  useEffect(() => {
+    let ws
+    let closed = false
+    try {
+      ws = new WebSocket(alertsWsUrl())
+    } catch {
+      setWsState('error')
+      return undefined
+    }
+    ws.onopen = () => { if (!closed) setWsState('live') }
+    ws.onclose = () => { if (!closed) setWsState('closed') }
+    ws.onerror = () => { if (!closed) setWsState('error') }
+    ws.onmessage = (ev) => {
       try {
-        await guardianLogin()
-        if (!cancelled) await refresh()
-      } catch (e) {
-        if (!cancelled) setError('Start GuardianAI: uvicorn backend.main:app --port 8000')
+        const msg = JSON.parse(ev.data)
+        if (msg.type === 'alert' && msg.incident) {
+          setLiveAlert(msg.incident)
+          setIncidents((prev) => {
+            const rest = prev.filter((i) => i.id !== msg.incident.id)
+            return [msg.incident, ...rest]
+          })
+        }
+      } catch {
+        /* ignore malformed */
       }
-    })()
-    const t = setInterval(() => { if (!cancelled) refresh() }, 4000)
-    return () => { cancelled = true; clearInterval(t) }
+    }
+    return () => {
+      closed = true
+      ws.close()
+    }
   }, [])
 
   async function resolve(id) {
     setBusy(id)
     try {
-      await guardianPatch(`/api/incidents/${id}`)
+      await apiPatch(`/api/incidents/${id}`)
       await refresh()
-    } catch {
-      setError('Resolve failed')
+    } catch (e) {
+      setError(e.message || 'Resolve failed')
     } finally {
       setBusy(null)
     }
-  }
-
-  function handleAdminLogout() {
-    sessionStorage.removeItem('guardian_token')
-    logoutAdmin()
-    navigate('/admin-login')
   }
 
   const openCount = incidents.filter((i) => i.status === 'open').length
@@ -119,29 +90,33 @@ export default function SecurityDashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="font-display text-sm font-semibold text-white">GuardianAI Command Center</p>
-          <p className="text-xs text-white/45">Live CCTV intelligence — no facial recognition.</p>
+          <p className="font-display text-sm font-semibold text-white">What needs attention now</p>
+          <p className="text-xs text-white/45">
+            Live CCTV · no facial recognition · alerts {wsState === 'live' ? 'via WebSocket' : `WS ${wsState}`}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={refresh}
-            className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/55 transition hover:text-white"
-          >
-            <RefreshCw className="h-3.5 w-3.5" /> Refresh
-          </button>
-          <button
-            type="button"
-            onClick={handleAdminLogout}
-            className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/55 transition hover:border-danger/40 hover:text-danger"
-          >
-            <LogOut className="h-3.5 w-3.5" /> End admin session
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={refresh}
+          className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/55 transition hover:text-white"
+        >
+          <RefreshCw className="h-3.5 w-3.5" /> Refresh
+        </button>
       </div>
+
+      {liveAlert && liveAlert.status === 'open' && (
+        <div className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-white">
+          <span className="font-semibold text-warning">New alert:</span>{' '}
+          [{(liveAlert.severity || '').toUpperCase()}] {liveAlert.reason}
+          <span className="text-white/45"> · {liveAlert.id}</span>
+        </div>
+      )}
 
       {error && (
         <p className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p>
+      )}
+      {loading && !status && (
+        <p className="text-sm text-white/45">Loading live status…</p>
       )}
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -166,7 +141,7 @@ export default function SecurityDashboard() {
           </div>
           <div className="bg-ink p-3">
             <img
-              src={streamSrc}
+              src={streamUrl()}
               alt="GuardianAI live stream"
               className="mx-auto max-h-[420px] w-full rounded-xl object-contain"
             />
@@ -174,7 +149,8 @@ export default function SecurityDashboard() {
         </GlassCard>
 
         <GlassCard hover={false} className="p-5 lg:col-span-2">
-          <h2 className="mb-3 font-display text-sm font-semibold text-white">Incidents</h2>
+          <h2 className="mb-1 font-display text-sm font-semibold text-white">Incidents</h2>
+          <p className="mb-3 text-[11px] text-white/40">What · where/camera · when · severity · action</p>
           <div className="max-h-[420px] space-y-2 overflow-y-auto">
             {incidents.length === 0 && (
               <p className="text-sm text-white/45">No incidents yet — pipeline is watching.</p>
@@ -190,7 +166,7 @@ export default function SecurityDashboard() {
                   <div>
                     <p className="text-sm text-white">{inc.reason}</p>
                     <p className="mt-0.5 text-[11px] text-white/40">
-                      {inc.id} · {inc.incident_type} · {String(inc.timestamp || '').slice(0, 19)}
+                      {inc.id} · {inc.incident_type} · cam {inc.camera_id} · {String(inc.timestamp || '').slice(0, 19)}
                     </p>
                   </div>
                   <Badge tone={levelTone[(inc.severity || '').toLowerCase()] || 'info'}>

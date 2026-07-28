@@ -23,16 +23,16 @@ export default function Landing() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate('/admin')}
+            onClick={() => navigate('/login')}
             className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white/80 transition hover:bg-white/10"
           >
-            <ShieldCheck className="h-4 w-4 text-amber-400" /> Admin Portal
+            <ShieldCheck className="h-4 w-4 text-amber-400" /> Enter console
           </button>
           <button
             onClick={() => navigate('/login')}
             className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-white shadow-liquid transition hover:bg-primary/90"
           >
-            Student Login
+            Warden login
           </button>
         </div>
       </header>
@@ -75,7 +75,7 @@ export default function Landing() {
             onClick={() => navigate('/login')}
             className="group flex items-center gap-2 rounded-full bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-liquid transition hover:bg-primary/90"
           >
-            Student Login
+            Warden login
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </button>
         </motion.div>
@@ -111,9 +111,9 @@ export default function Landing() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-xs text-white/40 md:flex-row">
           <span>© 2026 Trinity Engine — AI Powered Smart Hostel Management Platform.</span>
           <div className="flex gap-5">
-            <button onClick={() => navigate('/login')} className="hover:text-white/70">Student Portal</button>
-            <button onClick={() => navigate('/admin')} className="hover:text-white/70">Admin Portal</button>
-            <button onClick={() => navigate('/settings')} className="hover:text-white/70">Settings</button>
+            <button onClick={() => navigate('/login')} className="hover:text-white/70">Warden console</button>
+            <button onClick={() => navigate('/login')} className="hover:text-white/70">Enter console</button>
+            <button onClick={() => navigate('/login')} className="hover:text-white/70">Settings</button>
           </div>
         </div>
       </footer>
