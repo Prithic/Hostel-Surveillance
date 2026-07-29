@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import os
+import re
 import time
 from dataclasses import dataclass, field, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Sequence
 
@@ -23,6 +24,25 @@ from ai.rules import RuleContext
 from ai.tracker import Track
 from ai.video_stream import Frame
 from ai.zone import Point, Zone, ZoneManager
+
+# Hikvision-style names: D03_20260729142351.mp4 → start 2026-07-29 14:23:51 local
+_FILE_TS = re.compile(r"(?<!\d)(\d{14})(?!\d)")
+
+
+def _parse_file_start(source: str | int) -> datetime | None:
+    if isinstance(source, int):
+        return None
+    stem = Path(str(source)).stem
+    m = _FILE_TS.search(stem)
+    if not m:
+        return None
+    raw = m.group(1)
+    try:
+        naive = datetime.strptime(raw, "%Y%m%d%H%M%S")
+    except ValueError:
+        return None
+    # Treat as local hostel wall-clock (IST on demo laptops).
+    return naive.astimezone()
 
 
 def _default_zones() -> ZoneManager:
@@ -93,11 +113,24 @@ class GuardianPipeline:
         self._fps = 0.0
         self._frame_index = 0
         self._zones_scaled = False
+        self._file_start = _parse_file_start(self.config.source)
 
     def open(self) -> None:
         self._stream = OpenCVVideoStream(self.config.source)
         self._stream.open()
         self.status.online = True
+        self._file_start = _parse_file_start(self.config.source)
+
+    def _event_time(self) -> datetime:
+        """Wall clock for live cams; footage timestamp for file sources when parseable."""
+        if self._stream is not None and not self.is_live and self._file_start is not None:
+            msec = 0.0
+            cap = getattr(self._stream, "_cap", None)
+            if cap is not None:
+                msec = float(cap.get(cv2.CAP_PROP_POS_MSEC) or 0.0)
+            return self._file_start + timedelta(milliseconds=max(0.0, msec))
+        # Live webcam / unknown file naming → local now (hostel schedule hours).
+        return datetime.now().astimezone()
 
     def update_runtime(
         self,
@@ -174,7 +207,7 @@ class GuardianPipeline:
     def process_frame(self, frame: Frame) -> FrameResult:
         self._ensure_zones(frame)
         tracks = list(self._tracker.update((), frame))
-        now = datetime.now(timezone.utc)
+        now = self._event_time()
         ctx = RuleContext(
             tracks=tracks,
             zones=self.zones,
