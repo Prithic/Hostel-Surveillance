@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
@@ -204,6 +205,12 @@ class GuardianPipeline:
         frame = self._stream.read()
         if frame is None:
             return None
+        # Hostel CCTV exports are often 1440p+; downscale keeps CPU demos usable.
+        max_w = int(os.environ.get("GUARDIAN_MAX_WIDTH", "1280"))
+        h, w = frame.shape[:2]
+        if w > max_w > 0:
+            nh = max(1, int(h * max_w / w))
+            frame = cv2.resize(frame, (max_w, nh), interpolation=cv2.INTER_AREA)
         return self.process_frame(frame)
 
     @property

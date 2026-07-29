@@ -16,10 +16,11 @@ export default function SecurityDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(null)
-  const [videoPath, setVideoPath] = useState('videos/judge_clip.mp4')
+  const [videoPath, setVideoPath] = useState('Hostel footage/D03_20260729142351.mp4')
   const [sourceMsg, setSourceMsg] = useState('')
   const [sourceBusy, setSourceBusy] = useState(false)
   const [streamKey, setStreamKey] = useState(0)
+  const [clips, setClips] = useState([])
 
   const refresh = useCallback(async () => {
     try {
@@ -42,6 +43,12 @@ export default function SecurityDashboard() {
     const t = setInterval(refresh, 8000)
     return () => clearInterval(t)
   }, [refresh])
+
+  useEffect(() => {
+    apiGet('/api/videos')
+      .then((list) => setClips(Array.isArray(list) ? list : []))
+      .catch(() => setClips([]))
+  }, [])
 
   useEffect(() => {
     let ws
@@ -128,13 +135,35 @@ export default function SecurityDashboard() {
           <h2 className="font-display text-sm font-semibold text-white">Judge footage / webcam switch</h2>
         </div>
         <p className="mb-3 text-[11px] text-white/45">
-          Drop judge clips into <span className="font-mono text-white/70">videos/</span>, then apply here. Files loop automatically.
+          Original Hikvision clips live in <span className="font-mono text-white/70">Hostel footage/</span>. Prefer shorter D03/D06_*142351 files for demos. 1440p is auto-downscaled for CPU.
         </p>
+        {clips.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {clips
+              .slice()
+              .sort((a, b) => a.mb - b.mb)
+              .map((c) => (
+                <button
+                  key={c.path}
+                  type="button"
+                  disabled={sourceBusy}
+                  onClick={() => {
+                    setVideoPath(c.path)
+                    switchSource(c.path, c.name.startsWith('D06') ? 'cam-D06' : 'cam-D03')
+                  }}
+                  className="rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-[11px] text-white/80 hover:bg-white/10 disabled:opacity-50"
+                  title={c.path}
+                >
+                  {c.name} · {c.mb}MB
+                </button>
+              ))}
+          </div>
+        )}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <input
             value={videoPath}
             onChange={(e) => setVideoPath(e.target.value)}
-            placeholder="videos/judge_clip.mp4"
+            placeholder="Hostel footage/D03_20260729142351.mp4"
             className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-primary"
           />
           <button

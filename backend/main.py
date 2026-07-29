@@ -506,20 +506,50 @@ def api_config_update(body: ConfigUpdateRequest, session: Session = Depends(requ
     }
 
 
+@app.get("/api/videos")
+def api_list_videos(_session: Session = Depends(require_role("Warden"))) -> list[dict[str, Any]]:
+    """List local hostel / judge clips for the Security source picker."""
+    folders = [ROOT / "videos", ROOT / "Hostel footage"]
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for folder in folders:
+        if not folder.is_dir():
+            continue
+        for p in sorted(folder.glob("*.mp4")):
+            key = str(p.resolve())
+            if key in seen:
+                continue
+            seen.add(key)
+            try:
+                rel = str(p.relative_to(ROOT)).replace("\\", "/")
+            except ValueError:
+                rel = str(p)
+            out.append(
+                {
+                    "name": p.name,
+                    "path": rel,
+                    "mb": round(p.stat().st_size / (1024 * 1024), 1),
+                    "folder": folder.name,
+                }
+            )
+    return out
+
+
 @app.put("/api/source")
 def api_switch_source(body: SourceSwitchRequest, session: Session = Depends(require_role("Warden"))) -> dict[str, Any]:
     """Hot-swap webcam ↔ judge video file without restarting the whole API."""
     src = body.source.strip().strip('"')
-    # Allow relative paths under repo / videos/
+    # Allow relative paths under repo / videos / Hostel footage
     if src not in ("0", "1", "2") and not Path(src).is_file():
-        alt = ROOT / src
-        alt2 = ROOT / "videos" / Path(src).name
-        if alt.is_file():
-            src = str(alt)
-        elif alt2.is_file():
-            src = str(alt2)
-        else:
+        candidates = [
+            ROOT / src,
+            ROOT / "videos" / Path(src).name,
+            ROOT / "Hostel footage" / Path(src).name,
+        ]
+        found = next((str(c) for c in candidates if c.is_file()), None)
+        if found is None:
             raise HTTPException(status_code=400, detail=f"Video/camera source not found: {body.source}")
+        src = found
 
     old = hub.pipeline
     if old is not None:
@@ -532,7 +562,6 @@ def api_switch_source(body: SourceSwitchRequest, session: Session = Depends(requ
 
     os.environ["GUARDIAN_CAMERA_ID"] = body.camera_id
     cfg = _build_config(src)
-    # Force camera_id from request
     from dataclasses import replace
 
     cfg = replace(cfg, camera_id=body.camera_id, source=_parse_source(src))

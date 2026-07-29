@@ -23,6 +23,8 @@ videos/*
 !videos/README.md
 *.mp4
 *.zip
+Hostel footage/
+"Hostel footage"/
 YOLOv8s_*.zip
 YOLOv8s_v4_production/
 
