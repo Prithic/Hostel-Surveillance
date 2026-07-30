@@ -1,8 +1,10 @@
-﻿import { useHostel } from '../hostel/HostelContext'
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Settings as SettingsIcon, User, Pencil, Check, X, ShieldCheck } from 'lucide-react'
+﻿import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { Settings as SettingsIcon, User, ShieldCheck } from 'lucide-react'
 import GlassCard from '../components/GlassCard'
+import { useHostel } from '../hostel/HostelContext'
+import { getDisplayName, getEmail, getRole, me } from '../services/guardianApi'
+
 const labels = {
   complaintUpdates: 'Complaint status updates',
   noticeAlerts: 'New notice alerts',
@@ -14,20 +16,39 @@ const labels = {
 export default function Settings() {
   const { data, loading, error, replaceKey } = useHostel()
   const [prefs, setPrefs] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(null)
-  const [saved, setSaved] = useState(false)
+  const [session, setSession] = useState({
+    name: getDisplayName(),
+    email: getEmail(),
+    role: getRole(),
+    room: '',
+    student_id: '',
+  })
 
-  if (loading) return <p className="text-sm text-white/45">Loading live dataâ€¦</p>
+  useEffect(() => {
+    me()
+      .then((u) => {
+        setSession({
+          name: u?.name || getDisplayName(),
+          email: u?.email || getEmail(),
+          role: u?.role || getRole(),
+          room: u?.room || '',
+          student_id: u?.student_id || '',
+        })
+      })
+      .catch(() => {})
+  }, [])
+
+  if (loading) return <p className="text-sm text-white/45">Loading live data…</p>
   if (error) return <p className="text-sm text-danger">{error}</p>
   if (!data) return null
 
-  const currentUser = data.currentUser
   const notificationPrefs = data.notificationPrefs
   const livePrefs = prefs || notificationPrefs
-  const liveProfile = profile || currentUser
-  const liveDraft = draft || currentUser
+  const initials = (session.name || '?')
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
 
   function toggle(key) {
     setPrefs((p) => {
@@ -38,139 +59,39 @@ export default function Settings() {
     })
   }
 
-  function startEditing() {
-    setDraft(liveProfile)
-    setEditing(true)
-    setSaved(false)
-  }
-
-  function cancelEditing() {
-    setEditing(false)
-  }
-
-  function saveEditing(e) {
-    e.preventDefault()
-    setProfile(liveDraft)
-    setEditing(false)
-    replaceKey('currentUser', liveDraft)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2400)
-  }
-
-  const initials = liveProfile.name.split(' ').map((n) => n[0]).join('')
-
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <GlassCard hover={false} className="p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-primary" />
-            <h2 className="font-display text-sm font-semibold text-white">Profile</h2>
-          </div>
-          <AnimatePresence mode="wait">
-            {!editing ? (
-              <motion.button
-                key="edit"
-                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                onClick={startEditing}
-                className="flex items-center gap-1.5 rounded-full liquid-tint-primary px-3 py-1.5 text-xs font-medium text-white shadow-liquid"
-              >
-                <Pencil className="h-3.5 w-3.5" /> Edit
-              </motion.button>
-            ) : (
-              <motion.div key="actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-2">
-                <button
-                  onClick={cancelEditing}
-                  className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/55 transition hover:bg-white/10"
-                >
-                  <X className="h-3.5 w-3.5" /> Cancel
-                </button>
-                <button
-                  form="profile-edit-form"
-                  type="submit"
-                  className="flex items-center gap-1 rounded-full liquid-tint-success px-3 py-1.5 text-xs font-medium text-white shadow-liquid"
-                >
-                  <Check className="h-3.5 w-3.5" /> Save
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="mb-4 flex items-center gap-2">
+          <User className="h-4 w-4 text-primary" />
+          <h2 className="font-display text-sm font-semibold text-white">Profile</h2>
         </div>
-
+        <p className="mb-4 text-[11px] text-white/40">
+          Identity comes from your login account (not shared hostel seed). Change password below if needed.
+        </p>
         <div className="mb-5 flex items-center gap-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full liquid-tint-primary text-lg font-semibold text-white shadow-liquid">
             {initials}
           </div>
           <div>
-            <p className="font-display text-base font-semibold text-white">{liveProfile.name}</p>
-            <p className="text-xs text-white/45">{liveProfile.studentId}</p>
+            <p className="font-display text-base font-semibold text-white">{session.name || '—'}</p>
+            <p className="text-xs text-white/45">{session.role || '—'}</p>
           </div>
         </div>
-
-        <AnimatePresence>
-          {saved && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-              className="mb-3 flex items-center gap-2 overflow-hidden rounded-2xl bg-success/10 px-3 py-2 text-xs font-medium text-success"
-            >
-              <Check className="h-3.5 w-3.5" /> Profile updated successfully
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {!editing ? (
-          <div className="space-y-3">
-            {[
-              ['Name', liveProfile.name],
-              ['Email', liveProfile.email],
-              ['Student ID', liveProfile.studentId],
-              ['Room', `${liveProfile.room}, ${liveProfile.block}`],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-2xl bg-white/5 px-4 py-3">
-                <p className="text-xs text-white/45">{label}</p>
-                <p className="mt-0.5 text-sm font-medium text-white">{value}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <form id="profile-edit-form" onSubmit={saveEditing} className="space-y-3">
-            <div>
-              <label className="mb-1 block text-xs text-white/45">Name</label>
-              <input
-                value={liveDraft.name}
-                onChange={(e) => setDraft((d) => ({ ...(d || liveProfile), name: e.target.value }))}
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
+        <div className="space-y-3">
+          {[
+            ['Name', session.name],
+            ['Email', session.email],
+            ['Role', session.role],
+            ['Student ID', session.student_id || '—'],
+            ['Room', session.room || '—'],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl bg-white/5 px-4 py-3">
+              <p className="text-xs text-white/45">{label}</p>
+              <p className="mt-0.5 text-sm font-medium text-white">{value || '—'}</p>
             </div>
-            <div>
-              <label className="mb-1 block text-xs text-white/45">Email</label>
-              <input
-                type="email"
-                value={liveDraft.email}
-                onChange={(e) => setDraft((d) => ({ ...(d || liveProfile), email: e.target.value }))}
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-xs text-white/45">Room</label>
-                <input
-                  value={liveDraft.room}
-                  onChange={(e) => setDraft((d) => ({ ...(d || liveProfile), room: e.target.value }))}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-white/45">Block</label>
-                <input
-                  value={liveDraft.block}
-                  onChange={(e) => setDraft((d) => ({ ...(d || liveProfile), block: e.target.value }))}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-            </div>
-          </form>
-        )}
+          ))}
+        </div>
       </GlassCard>
 
       <div className="space-y-6">
@@ -179,10 +100,13 @@ export default function Settings() {
             <SettingsIcon className="h-4 w-4 text-primary" />
             <h2 className="font-display text-sm font-semibold text-white">Notification preferences</h2>
           </div>
+          <p className="mb-3 text-[11px] text-white/40">
+            Controls in-app bell channels. External SMS/WhatsApp/email are not connected in this build.
+          </p>
           <div className="space-y-1">
             {Object.keys(livePrefs).map((key) => (
               <label key={key} className="flex cursor-pointer items-center justify-between rounded-2xl px-3 py-2.5 transition hover:bg-white/5">
-                <span className="text-sm text-white">{labels[key]}</span>
+                <span className="text-sm text-white">{labels[key] || key}</span>
                 <button
                   type="button"
                   onClick={() => toggle(key)}
@@ -229,7 +153,7 @@ function PasswordForm() {
       setCurrent('')
       setNext('')
     } catch (err) {
-      setMsg(err.message || 'Failed')
+      setMsg(err.message || 'Update failed')
     } finally {
       setBusy(false)
     }
@@ -239,27 +163,29 @@ function PasswordForm() {
     <form onSubmit={submit} className="space-y-3">
       <input
         type="password"
+        placeholder="Current password"
         value={current}
         onChange={(e) => setCurrent(e.target.value)}
-        placeholder="Current password"
         className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-primary"
+        required
       />
       <input
         type="password"
+        placeholder="New password (min 8)"
         value={next}
         onChange={(e) => setNext(e.target.value)}
-        placeholder="New password (min 8)"
-        minLength={8}
         className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-primary"
+        minLength={8}
+        required
       />
       <button
-        disabled={busy || !current || next.length < 8}
+        type="submit"
+        disabled={busy}
         className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
       >
         {busy ? 'Saving…' : 'Change password'}
       </button>
-      {msg && <p className="text-xs text-emerald-400">{msg}</p>}
+      {msg && <p className="text-xs text-white/55">{msg}</p>}
     </form>
   )
 }
-

@@ -46,19 +46,32 @@ def _parse_file_start(source: str | int) -> datetime | None:
 
 
 def _default_zones() -> ZoneManager:
+    """Fallback if zones JSON missing — outdoor gate profile, not corridor."""
     return PolygonZoneManager(
         [
             Zone(
-                zone_id="restricted_a",
-                name="Restricted Area A",
+                zone_id="loiter_gate_apron",
+                name="Gate Apron (loiter watch)",
                 polygon=(
-                    Point(360, 40),
-                    Point(620, 40),
-                    Point(620, 280),
-                    Point(360, 280),
+                    Point(180, 300),
+                    Point(1100, 300),
+                    Point(1240, 700),
+                    Point(40, 700),
+                ),
+                restricted=False,
+                loiter=True,
+            ),
+            Zone(
+                zone_id="restricted_flank",
+                name="Restricted Flank / no-go",
+                polygon=(
+                    Point(1020, 40),
+                    Point(1260, 40),
+                    Point(1260, 280),
+                    Point(1020, 280),
                 ),
                 restricted=True,
-            )
+            ),
         ]
     )
 
@@ -206,6 +219,9 @@ class GuardianPipeline:
 
     def process_frame(self, frame: Frame) -> FrameResult:
         self._ensure_zones(frame)
+        health = self._rules.get("camera_health")
+        if health is not None and hasattr(health, "note_frame"):
+            health.note_frame(float(frame.mean()))
         tracks = list(self._tracker.update((), frame))
         now = self._event_time()
         ctx = RuleContext(
@@ -235,6 +251,11 @@ class GuardianPipeline:
     def read(self) -> FrameResult | None:
         if self._stream is None:
             raise RuntimeError("pipeline not open")
+        if hasattr(self._stream, "consume_looped") and self._stream.consume_looped():
+            # File looped: drop stale track/rule dwell state so re-alerts don't ghost.
+            self._tracker.reset()
+            self._rules = SimpleRuleEngine(default_rules())
+            self._zones_scaled = False
         frame = self._stream.read()
         if frame is None:
             return None

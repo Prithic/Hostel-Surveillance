@@ -11,11 +11,12 @@ import GlassCard from '../components/GlassCard'
 import Badge from '../components/Badge'
 import { exportToCSV } from '../utils/exportCSV'
 import { useHostel } from '../hostel/HostelContext'
+import { useRoleCheck } from '../hooks/useRoleCheck'
 
-const quickActions = [
-  { label: 'Security (GuardianAI)', icon: ShieldAlert, path: '/security', tone: 'liquid-tint-danger' },
-  { label: 'Live analytics', icon: Sparkles, path: '/analytics', tone: 'liquid-tint-primary' },
-  { label: 'Raise SOS', icon: Siren, path: '/sos', tone: 'liquid-tint-danger' },
+const quickActionsAll = [
+  { label: 'Security (GuardianAI)', icon: ShieldAlert, path: '/security', tone: 'liquid-tint-danger', wardenOnly: true },
+  { label: 'Live analytics', icon: Sparkles, path: '/analytics', tone: 'liquid-tint-primary', wardenOnly: true },
+  { label: 'Raise SOS', icon: Siren, path: '/sos', tone: 'liquid-tint-danger', wardenOnly: false },
 ]
 
 const complaintTone = { Pending: 'warning', 'In Progress': 'info', Completed: 'success' }
@@ -34,6 +35,7 @@ const item = {
 export default function Dashboard() {
   const navigate = useNavigate()
   const { data, loading, error } = useHostel()
+  const { isAdminRole } = useRoleCheck()
 
   if (loading) return <p className="text-sm text-white/45">Loading live hostel data…</p>
   if (error) return <p className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p>
@@ -54,16 +56,23 @@ export default function Dashboard() {
 
   const currentLaundryIdx = laundrySteps.indexOf(laundryTracking[0]?.status)
   const feePct = Math.round((feeStatus.paid / (feeStatus.paid + feeStatus.pending || 1)) * 100)
+  const quickActions = quickActionsAll.filter((a) => !a.wardenOnly || isAdminRole)
 
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       <div className="rounded-2xl border border-success/25 bg-success/10 px-4 py-3 text-xs text-white/80">
         <span className="font-semibold text-success">Live</span> hostel data from Guardian SQLite.
-        CCTV incidents stay on{" "}
-        <button type="button" onClick={() => navigate("/security")} className="underline text-white">
-          Security (GuardianAI)
-        </button>
-        .
+        {isAdminRole ? (
+          <>
+            {" "}CCTV incidents stay on{" "}
+            <button type="button" onClick={() => navigate("/security")} className="underline text-white">
+              Security (GuardianAI)
+            </button>
+            .
+          </>
+        ) : (
+          <> Use sidebar modules for your role. SOS reaches the warden incident stream.</>
+        )}
       </div>
       {/* Stats */}
       <motion.div variants={item} className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">

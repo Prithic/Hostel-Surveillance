@@ -1,18 +1,20 @@
 {
-  "reference_width": 640,
-  "reference_height": 480,
+  "reference_width": 1280,
+  "reference_height": 720,
   "zones": [
     {
-      "zone_id": "restricted_a",
-      "name": "Restricted Area A",
-      "restricted": true,
-      "polygon": [[360, 40], [620, 40], [620, 280], [360, 280]]
+      "zone_id": "loiter_gate_apron",
+      "name": "Gate Apron (loiter watch)",
+      "restricted": false,
+      "loiter": true,
+      "polygon": [[180, 300], [1100, 300], [1240, 700], [40, 700]]
     },
     {
-      "zone_id": "gate",
-      "name": "Main Gate",
+      "zone_id": "restricted_flank",
+      "name": "Restricted Flank / no-go",
       "restricted": true,
-      "polygon": [[40, 300], [280, 300], [280, 460], [40, 460]]
+      "loiter": false,
+      "polygon": [[1020, 40], [1260, 40], [1260, 280], [1020, 280]]
     }
   ]
 }

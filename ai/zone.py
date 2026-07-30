@@ -29,12 +29,14 @@ class Zone:
         polygon: Vertices in order (clockwise or counter-clockwise).
             At least three points are required for a valid zone.
         restricted: If True, entry may trigger a restricted-zone incident.
+        loiter: If True, prolonged presence may trigger loitering.
     """
 
     zone_id: str
     name: str
     polygon: tuple[Point, ...]
     restricted: bool = True
+    loiter: bool = False
 
     def __post_init__(self) -> None:
         if len(self.polygon) < 3:

@@ -19,7 +19,7 @@ except ImportError:
     pass
 
 import cv2
-from fastapi import Depends, FastAPI, HTTPException, Response, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -383,8 +383,10 @@ def _mjpeg() -> Iterator[bytes]:
 
 
 @app.get("/api/stream")
-def api_stream() -> StreamingResponse:
-    """MJPEG for <img>. LAN demo: left open so browser img tags work without headers."""
+def api_stream(request: Request) -> StreamingResponse:
+    """MJPEG for <img>. Auth via cookie or ?token= (img cannot send Authorization)."""
+    token = request.query_params.get("token") or request.cookies.get("guardian_token")
+    auth_service.validate(token)
     return StreamingResponse(_mjpeg(), media_type="multipart/x-mixed-replace; boundary=frame")
 
 
@@ -423,12 +425,26 @@ def _chat_reply(message: str) -> str:
         if not zone_incs:
             return "No restricted zone entry incidents recorded."
         return f"{len(zone_incs)} restricted-zone incident(s). Latest: {zone_incs[0].reason}."
-    if "tailgat" in q:
-        tail = [i for i in incidents if i.incident_type == "tailgating"]
+    if "tailgat" in q or "group entry" in q or "group_entry" in q:
+        tail = [i for i in incidents if i.incident_type in ("group_entry", "tailgating")]
         return (
-            "No tailgating incidents recorded."
+            "No group-entry incidents recorded."
             if not tail
-            else f"{len(tail)} tailgating incident(s). Latest: {tail[0].reason}."
+            else f"{len(tail)} group-entry incident(s). Latest: {tail[0].reason}."
+        )
+    if "loiter" in q:
+        loiter = [i for i in incidents if i.incident_type == "loitering"]
+        return (
+            "No loitering incidents recorded."
+            if not loiter
+            else f"{len(loiter)} loitering incident(s). Latest: {loiter[0].reason}."
+        )
+    if "tamper" in q or "camera health" in q or "black frame" in q:
+        health = [i for i in incidents if i.incident_type == "camera_health"]
+        return (
+            "No camera-health incidents recorded."
+            if not health
+            else f"{len(health)} camera-health incident(s). Latest: {health[0].reason}."
         )
     if "crowd" in q:
         crowd = [i for i in incidents if i.incident_type == "crowd_detection"]
@@ -456,13 +472,14 @@ def _chat_reply(message: str) -> str:
         lines = [f"• {k.replace('_', ' ')}: {v}" for k, v in by_type.items()]
         return f"Incident summary ({len(all_inc)} total):\n" + "\n".join(lines)
     return (
-        "Ask about: latest incident, alerts, restricted zones, tailgating, crowd, "
-        "night movement, camera status, or summary. I only answer from live system data."
+        "Ask about: latest incident, alerts, restricted zones, group entry, loitering, "
+        "camera health, crowd, night movement, camera status, or summary. "
+        "I only answer from live system data."
     )
 
 
 @app.post("/api/chat")
-def api_chat(body: ChatRequest, _session: Session = Depends(require_warden)) -> dict[str, str]:
+def api_chat(body: ChatRequest, _session: Session = Depends(require_role("Warden"))) -> dict[str, str]:
     return {"reply": _chat_reply(body.message)}
 
 
@@ -603,7 +620,7 @@ def hostel_append(body: HostelAppendRequest, session: Session = Depends(require_
         "laundryTracking": ("Warden", "Student", "Laundry Staff"),
         "laundryClaims": ("Warden", "Student", "Laundry Staff"),
         "messFeedback": ("Warden", "Student"),
-        "sosEvents": ("Warden", "Student", "Laundry Staff"),
+        # sosEvents only via POST /api/hostel/sos (creates incident + WS)
         "paymentHistory": ("Warden",),
         "notifications": ("Warden",),
     }
@@ -671,10 +688,10 @@ def hostel_replace(body: HostelReplaceRequest, session: Session = Depends(requir
         "mealPlan": ("Warden", "Student"),
         "feeStatus": ("Warden",),
         "statSummary": ("Warden",),
-        "currentUser": ("Warden", "Student", "Laundry Staff"),
+        # currentUser is seed display only — identity comes from /api/auth/me
         "nextInspection": ("Warden",),
         "attendanceRoster": ("Warden",),
-        "analytics": ("Warden", "Student"),
+        "analytics": ("Warden",),
     }
     roles = replace_roles.get(body.key)
     if roles is None:
@@ -706,11 +723,15 @@ async def hostel_sos(body: SosRequest, session: Session = Depends(require_warden
         severity="critical",
         reason=f"SOS: {event['note']} @ {event['location']}",
         camera_id="manual-sos",
-        metadata={"source": "sos", "by": session.email, "sos_id": event["id"]},
+        metadata={
+            "source": "sos",
+            "by": session.email,
+            "sos_id": event["id"],
+            "suggested_action": "Acknowledge SOS; dispatch response and mark resolved when clear",
+        },
     )
-    hub.alerts.publish(incident)
+    hub.alerts.publish(incident)  # → _on_alert → WS (do not double-broadcast)
     hub.store.audit("sos", f"{event['id']} by {session.email}")
-    await hub.broadcast({"type": "alert", "incident": incident.to_dict()})
     return {"event": event, "incident": incident.to_dict()}
 
 

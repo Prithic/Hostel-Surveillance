@@ -150,7 +150,8 @@ export async function apiPatchJson(path, body) {
 }
 
 export function streamUrl() {
-  return `${API}/api/stream`
+  const t = getToken()
+  return t ? `${API}/api/stream?token=${encodeURIComponent(t)}` : `${API}/api/stream`
 }
 
 export function alertsWsUrl() {

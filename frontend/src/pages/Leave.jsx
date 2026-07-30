@@ -190,8 +190,12 @@ export default function Leave() {
                     >
                       <QrCode className="h-3.5 w-3.5" /> View Digital Pass
                     </button>
-                  ) : (
+                  ) : r.status === 'Pending Warden Permission' ? (
+                    <span className="text-[11px] text-amber-300/90 italic">Awaiting warden</span>
+                  ) : r.status === 'Permission Denied' ? (
                     <span className="text-[11px] text-white/40 italic">Denied</span>
+                  ) : (
+                    <span className="text-[11px] text-white/40 italic">{r.status}</span>
                   )}
                 </td>
               </tr>

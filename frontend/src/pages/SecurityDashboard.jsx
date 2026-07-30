@@ -8,6 +8,39 @@ import { alertsWsUrl, apiGet, apiPatch, apiPut, streamUrl } from '../services/gu
 
 const levelTone = { critical: 'danger', high: 'danger', medium: 'warning', low: 'info' }
 
+const TYPE_LABEL = {
+  restricted_zone_entry: 'Restricted zone',
+  unauthorized_night_movement: 'Night movement',
+  crowd_detection: 'Crowd at gate',
+  group_entry: 'Group entry',
+  tailgating: 'Group entry',
+  loitering: 'Loitering',
+  camera_health: 'Camera health',
+  sos: 'SOS / emergency',
+  emergency_sos: 'SOS / emergency',
+}
+
+const FALLBACK_ACTION = {
+  restricted_zone_entry: 'Review live feed; send guard if zone is a no-go flank',
+  unauthorized_night_movement: 'Confirm curfew/outpass; challenge if unexplained',
+  crowd_detection: 'Assess gathering; prepare crowd control if bottleneck forms',
+  group_entry: 'Review stream; verify single-file policy with guard if required',
+  tailgating: 'Review stream; verify single-file policy with guard if required',
+  loitering: 'Check if person is waiting for transport/guard; dispatch if needed',
+  camera_health: 'Verify camera power/lens; send guard to inspect FOV',
+  sos: 'Acknowledge SOS; dispatch response and mark resolved when clear',
+  emergency_sos: 'Acknowledge SOS; dispatch response and mark resolved when clear',
+}
+
+function incidentAction(inc) {
+  const meta = inc.metadata || {}
+  return meta.suggested_action || FALLBACK_ACTION[inc.incident_type] || 'Review feed and decide'
+}
+
+function typeLabel(t) {
+  return TYPE_LABEL[t] || String(t || 'event').replaceAll('_', ' ')
+}
+
 export default function SecurityDashboard() {
   const [status, setStatus] = useState(null)
   const [incidents, setIncidents] = useState([])
@@ -57,8 +90,8 @@ export default function SecurityDashboard() {
       ws = new WebSocket(alertsWsUrl())
     } catch {
       setWsState('error')
-      return undefined
     }
+    if (!ws) return undefined
     ws.onopen = () => { if (!closed) setWsState('live') }
     ws.onclose = () => { if (!closed) setWsState('closed') }
     ws.onerror = () => { if (!closed) setWsState('error') }
@@ -115,9 +148,9 @@ export default function SecurityDashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="font-display text-sm font-semibold text-white">What needs attention now</p>
+          <p className="font-display text-sm font-semibold text-white">Security events — behaviour, not identity</p>
           <p className="text-xs text-white/45">
-            Live CCTV · no facial recognition · alerts {wsState === 'live' ? 'via WebSocket' : `WS ${wsState}`}
+            Live gate CCTV · no facial recognition · alerts {wsState === 'live' ? 'via WebSocket' : `WS ${wsState}`}
           </p>
         </div>
         <button
@@ -230,43 +263,58 @@ export default function SecurityDashboard() {
         </GlassCard>
 
         <GlassCard hover={false} className="p-5 lg:col-span-2">
-          <h2 className="mb-1 font-display text-sm font-semibold text-white">Incidents</h2>
-          <p className="mb-3 text-[11px] text-white/40">What · where/camera · when · severity · action</p>
+          <h2 className="mb-1 font-display text-sm font-semibold text-white">Explainable incidents</h2>
+          <p className="mb-3 text-[11px] text-white/40">What · where · when · why · action for warden</p>
           <div className="max-h-[420px] space-y-2 overflow-y-auto">
             {incidents.length === 0 && (
               <p className="text-sm text-white/45">No incidents yet — pipeline is watching.</p>
             )}
-            {incidents.map((inc) => (
-              <motion.div
-                key={inc.id}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-xl border border-white/10 px-3 py-2.5"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm text-white">{inc.reason}</p>
-                    <p className="mt-0.5 text-[11px] text-white/40">
-                      {inc.id} · {inc.incident_type} · cam {inc.camera_id} · {String(inc.timestamp || '').slice(0, 19)}
-                    </p>
+            {incidents.map((inc) => {
+              const zones = (inc.zone_ids || []).join(', ') || '—'
+              const tracks = (inc.track_ids || []).length
+                ? (inc.track_ids || []).join(', ')
+                : '—'
+              return (
+                <motion.div
+                  key={inc.id}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-xl border border-white/10 px-3 py-2.5"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-primary/90">
+                        {typeLabel(inc.incident_type)}
+                      </p>
+                      <p className="mt-0.5 text-sm text-white">{inc.reason}</p>
+                      <p className="mt-1 text-[11px] text-white/40">
+                        When {String(inc.timestamp || '').slice(0, 19)} · cam {inc.camera_id}
+                      </p>
+                      <p className="text-[11px] text-white/40">
+                        Where zone {zones} · tracks {tracks} · {inc.id}
+                      </p>
+                      <p className="mt-1.5 text-[11px] text-emerald-300/90">
+                        Action: {incidentAction(inc)}
+                      </p>
+                    </div>
+                    <Badge tone={levelTone[(inc.severity || '').toLowerCase()] || 'info'}>
+                      {(inc.severity || '').toUpperCase()}
+                    </Badge>
                   </div>
-                  <Badge tone={levelTone[(inc.severity || '').toLowerCase()] || 'info'}>
-                    {(inc.severity || '').toUpperCase()}
-                  </Badge>
-                </div>
-                {inc.status === 'open' && (
-                  <button
-                    type="button"
-                    disabled={busy === inc.id}
-                    onClick={() => resolve(inc.id)}
-                    className="mt-2 rounded-lg bg-primary/20 px-2.5 py-1 text-[11px] font-medium text-primary hover:bg-primary/30 disabled:opacity-50"
-                  >
-                    {busy === inc.id ? 'Resolving…' : 'Resolve'}
-                  </button>
-                )}
-                {inc.status === 'resolved' && <p className="mt-1 text-[11px] text-success">Resolved</p>}
-              </motion.div>
-            ))}
+                  {inc.status === 'open' && (
+                    <button
+                      type="button"
+                      disabled={busy === inc.id}
+                      onClick={() => resolve(inc.id)}
+                      className="mt-2 rounded-lg bg-primary/20 px-2.5 py-1 text-[11px] font-medium text-primary hover:bg-primary/30 disabled:opacity-50"
+                    >
+                      {busy === inc.id ? 'Resolving…' : 'Resolve'}
+                    </button>
+                  )}
+                  {inc.status === 'resolved' && <p className="mt-1 text-[11px] text-success">Resolved</p>}
+                </motion.div>
+              )
+            })}
           </div>
         </GlassCard>
       </div>

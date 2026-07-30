@@ -1,5 +1,7 @@
 # PRODUCT_AUDIT.md — GuardianAI
 
+> **Superseded for `feat/real-product`.** Prefer `FEATURE_MATRIX.md`, `ARCHITECTURE_REVIEW.md`, and `JUDGE_BRIEFING.md`. Content below is historical (2026-07-25) and partially wrong vs current branch.
+
 **Date:** 2026-07-25  
 **Mission:** Hostel security monitoring for wardens (detect → understand → prioritize → respond).  
 **Rule:** Feature must be REAL for the security product, or removed from the UI.

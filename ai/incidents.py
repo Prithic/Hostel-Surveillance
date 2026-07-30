@@ -68,6 +68,7 @@ class IncidentEngine:
             if inc.incident_type in (
                 IncidentType.CROWD_DETECTION.value,
                 IncidentType.UNAUTHORIZED_NIGHT_MOVEMENT.value,
+                IncidentType.CAMERA_HEALTH.value,
             ):
                 key = (inc.camera_id, inc.incident_type)
             self._by_key[key] = inc.id
@@ -79,7 +80,11 @@ class IncidentEngine:
 
     def _key(self, camera_id: str, incident: Incident) -> tuple:
         itype = incident.incident_type
-        if itype in (IncidentType.CROWD_DETECTION, IncidentType.UNAUTHORIZED_NIGHT_MOVEMENT):
+        if itype in (
+            IncidentType.CROWD_DETECTION,
+            IncidentType.UNAUTHORIZED_NIGHT_MOVEMENT,
+            IncidentType.CAMERA_HEALTH,
+        ):
             return (camera_id, itype.value)
         return (camera_id, itype.value, tuple(incident.zone_ids), tuple(sorted(incident.track_ids)))
 

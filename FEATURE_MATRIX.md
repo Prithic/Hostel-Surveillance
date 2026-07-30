@@ -23,9 +23,10 @@
 | Fees + record payment | Warden append `paymentHistory` + replace `feeStatus` |
 | SOS | `POST /api/hostel/sos` → event + critical incident + notification + WS |
 | In-app notifications | Topbar bell ← `notifications` store |
-| Security command center | stream, incidents, resolve, WS (Warden) |
+| Security command center | stream, explainable incidents, resolve, WS (Warden) |
+| Gate behaviour rules | restricted / crowd / night / group_entry / loiter / camera_health |
 | Runtime config edit | `PUT /api/config` hot-swaps thresholds (Warden) |
-| Warden assistant | `POST /api/chat` over live data |
+| Warden assistant | `POST /api/chat` Warden-only over live data |
 | Password change | `POST /api/auth/password` |
 
 ## LIMITS (not fake — just scoped)

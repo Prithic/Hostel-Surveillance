@@ -7,6 +7,7 @@ import MobileDrawer from './MobileDrawer'
 import LiquidBackdrop from './LiquidBackdrop'
 import WardenChat from './WardenChat'
 import { HostelProvider } from '../hostel/HostelContext'
+import { useRoleCheck } from '../hooks/useRoleCheck'
 
 const titles = {
   '/dashboard': 'Dashboard',
@@ -33,7 +34,8 @@ export default function DashboardLayout() {
   const [open, setOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
-  const title = titles[location.pathname] || 'Trinity Engine'
+  const title = titles[location.pathname] || 'GuardianAI'
+  const { isAdminRole } = useRoleCheck()
 
   function handleToggle() {
     setOpen((v) => !v)
@@ -63,7 +65,7 @@ export default function DashboardLayout() {
             </main>
           </div>
         </div>
-        <WardenChat />
+        {isAdminRole ? <WardenChat /> : null}
       </LiquidBackdrop>
     </HostelProvider>
   )

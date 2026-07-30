@@ -25,6 +25,14 @@ class OpenCVVideoStream(VideoStream):
         self._lock = threading.Lock()
         self._latest_frame: Frame | None = None
         self._is_live = False
+        self._looped = False
+
+    def consume_looped(self) -> bool:
+        """True once after a file seek-to-start; clears the flag."""
+        if not self._looped:
+            return False
+        self._looped = False
+        return True
 
     def open(self) -> None:
         if self._cap is not None and self._cap.isOpened():
@@ -93,8 +101,10 @@ class OpenCVVideoStream(VideoStream):
             return frame
         # File / offline clip ended — loop for judge demos (ponytail: simple seek; upgrade to playlist later).
         self._cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        self._looped = True
         ok, frame = self._cap.read()
         return frame if ok and frame is not None else None
+
     def close(self) -> None:
         self._running = False
         if self._thread is not None:

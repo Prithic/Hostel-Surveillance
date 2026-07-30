@@ -32,13 +32,16 @@ class Severity(str, Enum):
 
 
 class IncidentType(str, Enum):
-    """Canonical MVP (and future) incident kinds."""
+    """Canonical security event kinds (behaviour, not identity)."""
 
     RESTRICTED_ZONE_ENTRY = "restricted_zone_entry"
     UNAUTHORIZED_NIGHT_MOVEMENT = "unauthorized_night_movement"
     CROWD_DETECTION = "crowd_detection"
-    TAILGATING = "tailgating"
-    # Future: CAMERA_TAMPERING, FIRE, SMOKE
+    GROUP_ENTRY = "group_entry"  # honestly named; was pseudo-tailgating
+    LOITERING = "loitering"
+    CAMERA_HEALTH = "camera_health"
+    # Future: WRONG_DIRECTION, RUNNING — need calibrated geometry
+    # Identity: QR / RFID elsewhere — never faces
 
 
 @dataclass(frozen=True)

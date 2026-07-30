@@ -44,7 +44,7 @@ Webcam
   → OpenCV capture
   → YOLOv8n (person detect) + ByteTrack (IDs)
   → Polygon zones (JSON)
-  → Rule engine (restricted / crowd / night / tailgate)
+  → Rule engine (restricted / crowd / night / group entry / loiter / camera health)
   → SQLite incidents + alert fan-out
   → FastAPI (:8000)  REST + MJPEG + WebSocket
        ├── hostel_state (ERP document)
@@ -74,7 +74,7 @@ Webcam
 |--------|-----|----------------------|---------|
 | **Python FastAPI** | Async, typed, perfect for CV + API in one process | Node-only backend | OpenCV/Ultralytics ecosystem is Python-first |
 | **Ultralytics YOLOv8n** | Strong person detect, auto-download weights | Custom-only hostel `.pt` | Custom weights had poor webcam recall in testing |
-| **ByteTrack** | Stable track IDs for rules (tailgate/crowd) | SORT alone / DeepSORT | ByteTrack is built into Ultralytics; less glue |
+| **ByteTrack** | Stable track IDs for rules (group entry / loiter / crowd) | SORT alone / DeepSORT | ByteTrack is built into Ultralytics; less glue |
 | **OpenCV** | Capture + annotate MJPEG | GStreamer | Heavier ops; OpenCV is enough |
 | **SQLite** | Zero ops, one file, works offline after clone | Mongo / Postgres | Extra service for judges to install; Mongo lived in deferred `trinity-api/` |
 | **PBKDF2 (stdlib)** | Real password hashing, no extra auth SaaS | JWT-only / plain text / Firebase Auth | Offline demo; stdlib = fewer deps |
@@ -166,7 +166,7 @@ A: Polygon JSON scaled to frame size. Restricted polygons trigger entry rules.
 A: Tunable confidence + crowd threshold in Config. Night window is hour-based. We log incidents for human resolve — AI proposes, warden decides.
 
 **Q: Why ByteTrack?**  
-A: Rules like tailgating need identity across frames. Detection alone is flicker; tracks give temporal logic.
+A: Rules like group entry and loitering need identity across frames. Detection alone is flicker; tracks give temporal logic. We still never identify *who* — only that a person-shaped track persisted.
 
 ### Backend / security
 

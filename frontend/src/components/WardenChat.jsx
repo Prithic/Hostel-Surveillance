@@ -10,7 +10,7 @@ export default function WardenChat() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: 'Ask about latest incidents, alerts, camera status, zones, crowd, night movement, or a summary. I only answer from live GuardianAI data.',
+      text: 'Ask about latest incidents, alerts, camera status, zones, crowd, night movement, group entry, loitering, camera health, or a summary. I only answer from live GuardianAI data.',
     },
   ])
   const bottomRef = useRef(null)

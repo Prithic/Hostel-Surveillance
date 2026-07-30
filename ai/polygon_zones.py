@@ -40,6 +40,7 @@ class PolygonZoneManager(ZoneManager):
                     name=str(item.get("name", item["zone_id"])),
                     polygon=poly,
                     restricted=bool(item.get("restricted", True)),
+                    loiter=bool(item.get("loiter", False)),
                 )
             )
         return cls(zones)
