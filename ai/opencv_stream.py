@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import threading
 import time
@@ -59,6 +60,12 @@ class OpenCVVideoStream(VideoStream):
             raise RuntimeError(f"cannot open video source: {self._source!r}")
 
         self._cap = cap
+
+        # Judge clips often have empty lead-in; optional seek for reliable demos.
+        if not self._is_live:
+            start_sec = float(os.environ.get("GUARDIAN_START_SEC", "0") or 0)
+            if start_sec > 0:
+                self._cap.set(cv2.CAP_PROP_POS_MSEC, start_sec * 1000.0)
 
         if self._is_live:
             # Configure MJPG format to optimize hardware capture throughput

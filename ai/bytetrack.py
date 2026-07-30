@@ -65,15 +65,17 @@ class ByteTrackTracker(Tracker):
         boxes = result.boxes
         if boxes is None or len(boxes) == 0:
             return []
+        # Warm-up / lost tracks: Ultralytics may omit ids — still surface detections
+        # so status.person_count and rules are not stuck at zero.
         if boxes.id is None:
-            # No IDs yet (tracker warm-up / all lost) — nothing to report
-            return []
+            ids = list(range(1, len(boxes) + 1))
+        else:
+            ids = boxes.id.int().cpu().tolist()
 
         names = result.names or {}
         xyxy = boxes.xyxy.cpu().tolist()
         confs = boxes.conf.cpu().tolist()
         clss = boxes.cls.cpu().tolist()
-        ids = boxes.id.int().cpu().tolist()
 
         out: list[Track] = []
         for (x1, y1, x2, y2), conf, cls, tid in zip(xyxy, confs, clss, ids):

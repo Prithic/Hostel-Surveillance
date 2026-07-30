@@ -5,7 +5,8 @@
 
 param(
   [Parameter(Mandatory = $true)]
-  [string]$Video
+  [string]$Video,
+  [double]$StartSec = 180
 )
 
 $ErrorActionPreference = "Stop"
@@ -25,8 +26,10 @@ Set-Location '$Root'
 `$env:GUARDIAN_SOURCE='$abs'
 `$env:GUARDIAN_CAMERA_ID='judge-footage'
 `$env:GUARDIAN_ENABLE_CAMERA='1'
+`$env:GUARDIAN_START_SEC='$StartSec'
+`$env:GUARDIAN_LOITER_S='15'
 `$env:PYTHONUNBUFFERED='1'
-Write-Host "Guardian API — source=$abs" -ForegroundColor Cyan
+Write-Host "Guardian API — source=$abs start=${StartSec}s" -ForegroundColor Cyan
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 "@
 
@@ -43,5 +46,6 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", $webCmd
 Write-Host ""
 Write-Host "Started with judge video:" -ForegroundColor Green
 Write-Host "  $abs"
+Write-Host "  Seek start: ${StartSec}s (D03 empty lead-in — override with -StartSec 0)"
 Write-Host "Open http://127.0.0.1:5173/login → Login as Warden → Security"
 Write-Host "Clip loops automatically. Switch back to webcam from Security UI."
