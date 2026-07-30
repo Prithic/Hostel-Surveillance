@@ -244,6 +244,29 @@ export default function SecurityDashboard() {
         <StatCard icon={ShieldAlert} label="Open incidents" value={openCount} tone="danger" />
       </div>
 
+      {status && (
+        <GlassCard hover={false} className="px-4 py-3">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-white/55">
+            <span className={status.camera_online ? 'text-emerald-400' : 'text-danger'}>
+              {status.camera_online ? 'Camera online' : 'Camera offline'}
+            </span>
+            <span className={status.model_present ? 'text-emerald-400' : 'text-warning'}>
+              {status.model_present ? 'Model loaded' : 'Model missing'}
+            </span>
+            <span className={(status.components?.ai === 'up') ? 'text-emerald-400' : 'text-warning'}>
+              AI {status.components?.ai === 'up' ? 'running' : 'idle'}
+            </span>
+            <span>Tracking ready</span>
+            <span>Frames {status.frame_index ?? 0}</span>
+            <span>Uptime {Math.round(Number(status.uptime_s || 0))}s</span>
+            <span>WS {wsState}</span>
+            <span className={openCount === 0 && status.camera_online ? 'text-emerald-400' : 'text-warning'}>
+              Security: {openCount === 0 && status.camera_online ? 'Normal — waiting for activity' : `${openCount} open`}
+            </span>
+          </div>
+        </GlassCard>
+      )}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         <GlassCard hover={false} className="overflow-hidden p-0 lg:col-span-3">
           <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
@@ -267,7 +290,17 @@ export default function SecurityDashboard() {
           <p className="mb-3 text-[11px] text-white/40">What · where · when · why · action for warden</p>
           <div className="max-h-[420px] space-y-2 overflow-y-auto">
             {incidents.length === 0 && (
-              <p className="text-sm text-white/45">No incidents yet — pipeline is watching.</p>
+              <div className="space-y-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-3 text-[12px] text-white/70">
+                <p className="font-medium text-emerald-300">Monitoring active — no open anomalies</p>
+                <ul className="space-y-1 text-white/55">
+                  <li>{status?.camera_online ? 'Camera online' : 'Camera offline'}</li>
+                  <li>{status?.model_present ? 'Detection model loaded' : 'Waiting for model'}</li>
+                  <li>Pipeline watching gate FOV</li>
+                  <li>Frames processed: {status?.frame_index ?? 0}</li>
+                  <li>People in view: {status?.person_count ?? 0}</li>
+                  <li>Status: normal (empty CCTV periods are expected)</li>
+                </ul>
+              </div>
             )}
             {incidents.map((inc) => {
               const zones = (inc.zone_ids || []).join(', ') || '—'

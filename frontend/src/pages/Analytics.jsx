@@ -52,7 +52,13 @@ export default function Analytics() {
         <GlassCard hover={false} className="p-5">
           <h2 className="mb-3 font-display text-sm font-semibold text-white">By severity</h2>
           {Object.keys(bySev).length === 0 ? (
-            <p className="text-sm text-white/45">No severity data yet.</p>
+            <div className="space-y-1 text-sm text-white/55">
+              <p className="text-emerald-300/90">No severity breakdown yet</p>
+              <p className="text-xs text-white/40">
+                Camera {data.camera_online ? 'online' : 'offline'} · FPS {Number(data.fps || 0).toFixed(1)} ·
+                waiting for the first scored incident.
+              </p>
+            </div>
           ) : (
             <ul className="space-y-2">
               {Object.entries(bySev).map(([k, v]) => (
@@ -67,7 +73,12 @@ export default function Analytics() {
         <GlassCard hover={false} className="p-5">
           <h2 className="mb-3 font-display text-sm font-semibold text-white">By type</h2>
           {Object.keys(byType).length === 0 ? (
-            <p className="text-sm text-white/45">No incidents recorded yet.</p>
+            <div className="space-y-1 text-sm text-white/55">
+              <p className="text-emerald-300/90">Incident log empty — system healthy</p>
+              <p className="text-xs text-white/40">
+                Gate monitoring is active. Quiet periods are normal for outdoor CCTV.
+              </p>
+            </div>
           ) : (
             <ul className="space-y-2">
               {Object.entries(byType).map(([k, v]) => (

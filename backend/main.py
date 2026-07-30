@@ -301,6 +301,7 @@ def health() -> dict[str, Any]:
         "camera_online": bool(st and st.online),
         "fps": st.fps if st else 0.0,
         "person_count": st.person_count if st else 0,
+        "frame_index": int(st.frame_index) if st else 0,
         "camera_id": st.camera_id if st else None,
         "last_error": st.last_error if st else "",
         "db": str(hub.store.path),

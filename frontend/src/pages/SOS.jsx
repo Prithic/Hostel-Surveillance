@@ -103,7 +103,12 @@ export default function SOS() {
         <GlassCard hover={false} className="p-5">
           <h2 className="mb-3 font-display text-sm font-semibold text-white">Recent SOS (live store)</h2>
           {recent.length === 0 ? (
-            <p className="text-sm text-white/45">No SOS events yet.</p>
+            <div className="space-y-1 text-sm text-white/55">
+              <p className="text-emerald-300/90">No SOS events — campus quiet</p>
+              <p className="text-xs text-white/40">
+                Trigger only for real emergencies or the demo. Each SOS becomes a critical Security incident.
+              </p>
+            </div>
           ) : (
             <ul className="max-h-64 space-y-2 overflow-y-auto">
               {recent.map((e) => (
