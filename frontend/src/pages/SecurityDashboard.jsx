@@ -56,6 +56,8 @@ export default function SecurityDashboard() {
   const [clips, setClips] = useState([])
   const [startSec, setStartSec] = useState(180)
 
+  const [streamBroken, setStreamBroken] = useState(false)
+
   const refresh = useCallback(async () => {
     try {
       const [st, inc] = await Promise.all([
@@ -140,6 +142,7 @@ export default function SecurityDashboard() {
       const seek = res.start_sec != null ? ` · seek ${res.start_sec}s` : ''
       setSourceMsg(`Source → ${res.source} (${res.camera_id})${seek}`)
       setStreamKey((k) => k + 1)
+      setStreamBroken(false)
       await refresh()
     } catch (e) {
       setSourceMsg(e.message || 'Source switch failed')
@@ -309,12 +312,31 @@ export default function SecurityDashboard() {
             </Badge>
           </div>
           <div className="bg-ink p-3">
-            <img
-              key={streamKey}
-              src={streamUrl(streamKey)}
-              alt="GuardianAI live stream"
-              className="mx-auto max-h-[420px] w-full rounded-xl object-contain"
-            />
+            {streamBroken ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                <p className="text-sm text-white/70">Live stream disconnected</p>
+                <p className="text-[11px] text-white/40">Re-auth or restart feed — AI may still be running (check FPS).</p>
+                <button
+                  type="button"
+                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white"
+                  onClick={() => {
+                    setStreamBroken(false)
+                    setStreamKey((k) => k + 1)
+                  }}
+                >
+                  Retry stream
+                </button>
+              </div>
+            ) : (
+              <img
+                key={streamKey}
+                src={streamUrl(streamKey)}
+                alt="GuardianAI live stream"
+                className="mx-auto max-h-[420px] w-full rounded-xl object-contain"
+                onError={() => setStreamBroken(true)}
+                onLoad={() => setStreamBroken(false)}
+              />
+            )}
           </div>
         </GlassCard>
 
