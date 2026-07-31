@@ -89,6 +89,7 @@ class SourceSwitchRequest(BaseModel):
 
     source: str = Field(min_length=1, max_length=500)
     camera_id: str = Field(default="judge-footage", min_length=1, max_length=64)
+    start_sec: float | None = Field(default=None, ge=0, le=86400)
 
 
 class Hub:
@@ -579,6 +580,10 @@ def api_switch_source(body: SourceSwitchRequest, session: Session = Depends(requ
         time.sleep(0.25)
 
     os.environ["GUARDIAN_CAMERA_ID"] = body.camera_id
+    if body.start_sec is not None:
+        os.environ["GUARDIAN_START_SEC"] = str(body.start_sec)
+    elif src in ("0", "1", "2"):
+        os.environ["GUARDIAN_START_SEC"] = "0"
     cfg = _build_config(src)
     from dataclasses import replace
 
@@ -590,6 +595,7 @@ def api_switch_source(body: SourceSwitchRequest, session: Session = Depends(requ
         "source": str(pipe.config.source),
         "camera_id": pipe.config.camera_id,
         "online": pipe.status.online,
+        "start_sec": float(os.environ.get("GUARDIAN_START_SEC", "0") or 0),
     }
 
 

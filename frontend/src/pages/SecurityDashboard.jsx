@@ -54,6 +54,7 @@ export default function SecurityDashboard() {
   const [sourceBusy, setSourceBusy] = useState(false)
   const [streamKey, setStreamKey] = useState(0)
   const [clips, setClips] = useState([])
+  const [startSec, setStartSec] = useState(180)
 
   const refresh = useCallback(async () => {
     try {
@@ -127,12 +128,17 @@ export default function SecurityDashboard() {
     }
   }
 
-  async function switchSource(source, cameraId) {
+  async function switchSource(source, cameraId, seekSec) {
     setSourceBusy(true)
     setSourceMsg('')
     try {
-      const res = await apiPut('/api/source', { source, camera_id: cameraId })
-      setSourceMsg(`Source → ${res.source} (${res.camera_id})`)
+      const payload = { source, camera_id: cameraId }
+      if (seekSec != null && seekSec !== '') {
+        payload.start_sec = Number(seekSec)
+      }
+      const res = await apiPut('/api/source', payload)
+      const seek = res.start_sec != null ? ` · seek ${res.start_sec}s` : ''
+      setSourceMsg(`Source → ${res.source} (${res.camera_id})${seek}`)
       setStreamKey((k) => k + 1)
       await refresh()
     } catch (e) {
@@ -168,8 +174,35 @@ export default function SecurityDashboard() {
           <h2 className="font-display text-sm font-semibold text-white">Judge footage / webcam switch</h2>
         </div>
         <p className="mb-3 text-[11px] text-white/45">
-          Original Hikvision clips live in <span className="font-mono text-white/70">Hostel footage/</span>. Prefer shorter D03/D06_*142351 files for demos. 1440p is auto-downscaled for CPU.
+          Hikvision clips in <span className="font-mono text-white/70">Hostel footage/</span>.
+          D03 is empty for ~3 min — keep <span className="text-white/70">Start at (sec)</span> at 180 for demos.
         </p>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <label className="text-[11px] text-white/45" htmlFor="seek-sec">Start at (sec)</label>
+          <input
+            id="seek-sec"
+            type="number"
+            min={0}
+            step={1}
+            value={startSec}
+            onChange={(e) => setStartSec(Number(e.target.value))}
+            className="w-24 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none focus:border-primary"
+          />
+          <button
+            type="button"
+            className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-white/55 hover:text-white"
+            onClick={() => setStartSec(180)}
+          >
+            D03 default 180
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-white/55 hover:text-white"
+            onClick={() => setStartSec(0)}
+          >
+            From start
+          </button>
+        </div>
         {clips.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
             {clips
@@ -182,7 +215,7 @@ export default function SecurityDashboard() {
                   disabled={sourceBusy}
                   onClick={() => {
                     setVideoPath(c.path)
-                    switchSource(c.path, c.name.startsWith('D06') ? 'cam-D06' : 'cam-D03')
+                    switchSource(c.path, c.name.startsWith('D06') ? 'cam-D06' : 'cam-D03', startSec)
                   }}
                   className="rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-[11px] text-white/80 hover:bg-white/10 disabled:opacity-50"
                   title={c.path}
@@ -202,7 +235,7 @@ export default function SecurityDashboard() {
           <button
             type="button"
             disabled={sourceBusy}
-            onClick={() => switchSource(videoPath.trim(), 'judge-footage')}
+            onClick={() => switchSource(videoPath.trim(), 'judge-footage', startSec)}
             className="rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
           >
             {sourceBusy ? 'Switching…' : 'Play video'}
@@ -210,7 +243,7 @@ export default function SecurityDashboard() {
           <button
             type="button"
             disabled={sourceBusy}
-            onClick={() => switchSource('0', 'webcam-0')}
+            onClick={() => switchSource('0', 'webcam-0', 0)}
             className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 disabled:opacity-50"
           >
             Use webcam

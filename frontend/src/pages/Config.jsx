@@ -77,7 +77,7 @@ export default function ConfigPage() {
       <div>
         <p className="font-display text-sm font-semibold text-white">Runtime configuration</p>
         <p className="text-xs text-white/45">
-          Detection thresholds can be edited live. Camera source / model still require server restart.
+          Detection thresholds can be edited live. Video/webcam can be switched from Security (with seek). Model path still needs restart.
         </p>
       </div>
 

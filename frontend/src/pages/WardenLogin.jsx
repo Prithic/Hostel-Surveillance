@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { ShieldCheck, Lock, Mail, Eye, EyeOff, ArrowLeft, ArrowRight, User, Shirt } from 'lucide-react'
 import AnimatedBackground from '../components/AnimatedBackground'
-import { login } from '../services/guardianApi'
+import { login, getRole } from '../services/guardianApi'
 import { isWardenAuthed } from '../auth'
 
 const QUICK_LOGINS = [
@@ -52,7 +52,7 @@ export default function WardenLogin() {
     setPassword(nextPassword)
     try {
       await login(nextEmail.trim(), nextPassword)
-      navigate('/dashboard')
+      navigate(getRole() === 'Warden' ? '/security' : '/dashboard')
     } catch (err) {
       setError(err.message || 'Invalid credentials')
     } finally {
