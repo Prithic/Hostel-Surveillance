@@ -149,9 +149,12 @@ export async function apiPatchJson(path, body) {
   return parse(res)
 }
 
-export function streamUrl() {
+export function streamUrl(cacheBust) {
   const t = getToken()
-  return t ? `${API}/api/stream?token=${encodeURIComponent(t)}` : `${API}/api/stream`
+  const u = new URL(`${API}/api/stream`)
+  if (t) u.searchParams.set('token', t)
+  if (cacheBust != null && cacheBust !== '') u.searchParams.set('t', String(cacheBust))
+  return u.toString()
 }
 
 export function alertsWsUrl() {

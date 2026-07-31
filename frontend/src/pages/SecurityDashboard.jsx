@@ -311,7 +311,7 @@ export default function SecurityDashboard() {
           <div className="bg-ink p-3">
             <img
               key={streamKey}
-              src={`${streamUrl()}?t=${streamKey}`}
+              src={streamUrl(streamKey)}
               alt="GuardianAI live stream"
               className="mx-auto max-h-[420px] w-full rounded-xl object-contain"
             />
