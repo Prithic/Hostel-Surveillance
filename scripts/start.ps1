@@ -45,5 +45,5 @@ Write-Host "  Warden   admin@guardian.ai     / Warden@2026"
 Write-Host "  Student  student@hostel.local  / Student@2026"
 Write-Host "  Laundry  laundry@hostel.local  / Laundry@2026"
 if ($NoCamera) {
-  Write-Host "(Camera disabled — hostel ERP still works; Security stream offline)" -ForegroundColor Yellow
+  Write-Host "(Camera disabled - hostel ERP still works; Security stream offline)" -ForegroundColor Yellow
 }
